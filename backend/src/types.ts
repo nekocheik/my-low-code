@@ -1,3 +1,4 @@
+// backend/src/types.ts
 
 export interface NodePosition {
   x: number;
@@ -23,7 +24,7 @@ export interface Edge {
   id: string;
   source: string;
   target: string;
-  label?: string; // Ajout d'un label pour les fonctions exportées
+  label?: string;
 }
 
 export interface ProjectGraph {

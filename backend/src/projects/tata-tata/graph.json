@@ -1,0 +1,27 @@
+{
+  "nodes": [
+    {
+      "id": "node_1729278603339",
+      "type": "code",
+      "position": {
+        "x": 1110.0158746875336,
+        "y": 422.61558840614754
+      },
+      "data": {
+        "code": "// New node",
+        "fileName": "newFile.js",
+        "imports": [],
+        "exportedFunctions": []
+      },
+      "width": 300,
+      "height": 398,
+      "selected": true,
+      "positionAbsolute": {
+        "x": 1110.0158746875336,
+        "y": 422.61558840614754
+      },
+      "dragging": false
+    }
+  ],
+  "edges": []
+}

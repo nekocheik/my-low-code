@@ -1,4 +1,4 @@
-/// my-low-code-app/backend/src/context.ts
+// backend/src/context.ts
 
 import { parse } from '@babel/parser';
 import traverse from '@babel/traverse';
