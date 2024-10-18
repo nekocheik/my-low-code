@@ -1,0 +1,29 @@
+{
+  "nodes": [
+    {
+      "id": "1",
+      "type": "code",
+      "position": {
+        "x": 148.5555405666188,
+        "y": 29.70218105123557
+      },
+      "data": {
+        "label": "Fichier JS",
+        "fileName": "test.js",
+        "imports": [
+          "import from "
+        ],
+        "code": "// Votre code ici"
+      },
+      "width": 322,
+      "height": 325,
+      "selected": true,
+      "dragging": false,
+      "positionAbsolute": {
+        "x": 148.5555405666188,
+        "y": 29.70218105123557
+      }
+    }
+  ],
+  "edges": []
+}

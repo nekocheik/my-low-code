@@ -1,0 +1,29 @@
+{
+  "nodes": [
+    {
+      "id": "17143edb-7311-42c7-836e-f213c1d382f5",
+      "type": "code",
+      "position": {
+        "x": 289.9284478394013,
+        "y": 101.36459689720755
+      },
+      "data": {
+        "label": "Fichier JS",
+        "fileName": "file2.js",
+        "imports": [],
+        "code": "console.log(\"toto\")",
+        "exportedFunctions": [],
+        "accessibleFunctions": []
+      },
+      "width": 300,
+      "height": 523,
+      "selected": true,
+      "positionAbsolute": {
+        "x": 289.9284478394013,
+        "y": 101.36459689720755
+      },
+      "dragging": false
+    }
+  ],
+  "edges": []
+}

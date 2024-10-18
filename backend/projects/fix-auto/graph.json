@@ -1,0 +1,85 @@
+{
+  "nodes": [
+    {
+      "id": "initial-node",
+      "type": "code",
+      "position": {
+        "x": 82.16779744437406,
+        "y": -119.89311588488289
+      },
+      "data": {
+        "label": "index.js",
+        "fileName": "index.js",
+        "imports": [],
+        "code": "console.log(\"ici\", toto)",
+        "exportedFunctions": [
+          "toto"
+        ]
+      },
+      "width": 300,
+      "height": 483,
+      "selected": false,
+      "positionAbsolute": {
+        "x": 82.16779744437406,
+        "y": -119.89311588488289
+      },
+      "dragging": false
+    },
+    {
+      "id": "8ff342d4-217d-446c-885a-563472016b1a",
+      "type": "code",
+      "position": {
+        "x": 457.85593830079347,
+        "y": 92.86215402811678
+      },
+      "data": {
+        "label": "file2.js",
+        "fileName": "file2.js",
+        "imports": [],
+        "code": "export function toto() {\n  console.log(\"toto\");\n}",
+        "exportedFunctions": []
+      },
+      "width": 300,
+      "height": 438,
+      "selected": false,
+      "positionAbsolute": {
+        "x": 457.85593830079347,
+        "y": 92.86215402811678
+      },
+      "dragging": false
+    },
+    {
+      "id": "d9219f16-cc66-4dde-aa66-dde33db55eec",
+      "type": "code",
+      "position": {
+        "x": 14.930454830219333,
+        "y": 647.7925634872048
+      },
+      "data": {
+        "label": "Fichier JS",
+        "fileName": "file3.js",
+        "imports": [],
+        "code": "console.log(context, \"ic naruto iffffffc\")",
+        "exportedFunctions": [],
+        "accessibleFunctions": []
+      },
+      "width": 300,
+      "height": 438,
+      "selected": true,
+      "positionAbsolute": {
+        "x": 14.930454830219333,
+        "y": 647.7925634872048
+      },
+      "dragging": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "8ff342d4-217d-446c-885a-563472016b1a",
+      "sourceHandle": "codeOutput",
+      "target": "d9219f16-cc66-4dde-aa66-dde33db55eec",
+      "targetHandle": "codeInput",
+      "id": "reactflow__edge-8ff342d4-217d-446c-885a-563472016b1acodeOutput-d9219f16-cc66-4dde-aa66-dde33db55eeccodeInput"
+    }
+  ]
+}

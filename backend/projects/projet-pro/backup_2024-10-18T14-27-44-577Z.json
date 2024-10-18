@@ -1,0 +1,31 @@
+{
+  "nodes": [
+    {
+      "id": "f299b6a1-3e42-45a1-b620-a27e75ccca2c",
+      "type": "code",
+      "position": {
+        "x": 51.192561572743045,
+        "y": 235.89023133453406
+      },
+      "data": {
+        "label": "Fichier JS",
+        "fileName": "file1.js",
+        "imports": [],
+        "code": "// Votre code ici\nfunction toto () {\n    console.log(\"toto\")\n}\n\ntoto()",
+        "exportedFunctions": [
+          "toto"
+        ],
+        "accessibleFunctions": []
+      },
+      "width": 300,
+      "height": 536,
+      "selected": true,
+      "dragging": false,
+      "positionAbsolute": {
+        "x": 51.192561572743045,
+        "y": 235.89023133453406
+      }
+    }
+  ],
+  "edges": []
+}

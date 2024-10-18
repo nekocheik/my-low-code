@@ -1,0 +1,66 @@
+{
+  "nodes": [
+    {
+      "id": "f299b6a1-3e42-45a1-b620-a27e75ccca2c",
+      "type": "code",
+      "position": {
+        "x": 278.3923113013707,
+        "y": 720.3841320517993
+      },
+      "data": {
+        "label": "Fichier JS",
+        "fileName": "file1.js",
+        "imports": [],
+        "code": "// Votre code ici\nfunction toto () {\n    console.log(\"toto\")\n}\n\ntoto()",
+        "exportedFunctions": [
+          "",
+          "toto"
+        ],
+        "accessibleFunctions": []
+      },
+      "width": 300,
+      "height": 523,
+      "selected": false,
+      "dragging": false,
+      "positionAbsolute": {
+        "x": 278.3923113013707,
+        "y": 720.3841320517993
+      }
+    },
+    {
+      "id": "17143edb-7311-42c7-836e-f213c1d382f5",
+      "type": "code",
+      "position": {
+        "x": 289.9284478394013,
+        "y": 101.36459689720755
+      },
+      "data": {
+        "label": "Fichier JS",
+        "fileName": "file2.js",
+        "imports": [
+          "import { toto } from './file1.js'"
+        ],
+        "code": "toto()",
+        "exportedFunctions": [],
+        "accessibleFunctions": []
+      },
+      "width": 300,
+      "height": 555,
+      "selected": true,
+      "positionAbsolute": {
+        "x": 289.9284478394013,
+        "y": 101.36459689720755
+      },
+      "dragging": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "17143edb-7311-42c7-836e-f213c1d382f5",
+      "sourceHandle": "codeOutput",
+      "target": "f299b6a1-3e42-45a1-b620-a27e75ccca2c",
+      "targetHandle": "codeInput",
+      "id": "reactflow__edge-17143edb-7311-42c7-836e-f213c1d382f5codeOutput-f299b6a1-3e42-45a1-b620-a27e75ccca2ccodeInput"
+    }
+  ]
+}

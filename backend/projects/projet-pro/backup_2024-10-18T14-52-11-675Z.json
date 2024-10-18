@@ -1,0 +1,63 @@
+{
+  "nodes": [
+    {
+      "id": "e3b292af-e6be-4704-a773-b93442df0aa6",
+      "type": "code",
+      "position": {
+        "x": 355.6570606532497,
+        "y": 209.1291502814793
+      },
+      "data": {
+        "label": "Fichier JS",
+        "fileName": "file1.js",
+        "imports": [],
+        "code": "// Votre code ici\nfunction toto () {\n    console.log(\"toto\")\n}",
+        "exports": [],
+        "availableExportFunctions": [],
+        "exportedFunctions": []
+      },
+      "width": 300,
+      "height": 523,
+      "selected": false,
+      "positionAbsolute": {
+        "x": 355.6570606532497,
+        "y": 209.1291502814793
+      },
+      "dragging": false
+    },
+    {
+      "id": "802ff3f5-5fff-4a9d-9602-5060489751c0",
+      "type": "code",
+      "position": {
+        "x": 211.7007808403747,
+        "y": 845.8239185164094
+      },
+      "data": {
+        "label": "Fichier JS",
+        "fileName": "file2.js",
+        "imports": [],
+        "code": "console.log(\"cccc\", toto)\n\n",
+        "exports": [],
+        "availableExportFunctions": [],
+        "exportedFunctions": []
+      },
+      "width": 300,
+      "height": 523,
+      "selected": true,
+      "positionAbsolute": {
+        "x": 211.7007808403747,
+        "y": 845.8239185164094
+      },
+      "dragging": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "e3b292af-e6be-4704-a773-b93442df0aa6",
+      "sourceHandle": "codeOutput",
+      "target": "802ff3f5-5fff-4a9d-9602-5060489751c0",
+      "targetHandle": "codeInput",
+      "id": "reactflow__edge-e3b292af-e6be-4704-a773-b93442df0aa6codeOutput-802ff3f5-5fff-4a9d-9602-5060489751c0codeInput"
+    }
+  ]
+}

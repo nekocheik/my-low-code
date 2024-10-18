@@ -1,0 +1,51 @@
+{
+  "nodes": [
+    {
+      "id": "initial-node",
+      "type": "code",
+      "position": {
+        "x": 117.56782448718423,
+        "y": 261.81060725268225
+      },
+      "data": {
+        "label": "index.js",
+        "fileName": "index.js",
+        "imports": [],
+        "code": "console.log(toto)",
+        "exportedFunctions": [
+          "toto"
+        ],
+        "accessibleFunctions": []
+      },
+      "width": 300,
+      "height": 483,
+      "selected": true,
+      "dragging": false,
+      "positionAbsolute": {
+        "x": 117.56782448718423,
+        "y": 261.81060725268225
+      }
+    },
+    {
+      "id": "2d89e5ea-b061-4d73-b8da-7029a512e7b4",
+      "type": "code",
+      "position": {
+        "x": 540.5338394672483,
+        "y": 130.0302015476862
+      },
+      "data": {
+        "label": "file2.js",
+        "fileName": "file2.js",
+        "imports": [],
+        "code": "function toto () {\n    console.log(\"toto\")\n}",
+        "exportedFunctions": [],
+        "accessibleFunctions": []
+      },
+      "width": 300,
+      "height": 438,
+      "selected": false,
+      "dragging": false
+    }
+  ],
+  "edges": []
+}
