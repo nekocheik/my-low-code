@@ -1,3 +1,5 @@
+// backend/src/controllers/graphController.ts
+
 import { Request, Response } from 'express';
 import Project from '../models/Project';
 import NodeModel from '../models/Node';
@@ -31,7 +33,7 @@ export const getProjectGraph = async (req: Request, res: Response) => {
 export const updateGraph = async (req: Request, res: Response) => {
   const { project, nodes, edges } = req.body;
 
-  console.log('Received updateGraph request:', req.body);
+  console.log('Received updateGraph request:', req.body); // Log des données reçues
 
   if (!project || !nodes || !edges) {
     return res.status(400).json({ message: 'Project, nodes, and edges are required.' });
@@ -50,11 +52,19 @@ export const updateGraph = async (req: Request, res: Response) => {
 
     const projectPath = path.join(__dirname, '..', 'projects', project);
 
+    // Vérifier si le dossier du projet existe
+    try {
+      await fs.access(projectPath);
+    } catch (err) {
+      console.error(`Project directory "${projectPath}" does not exist.`);
+      return res.status(400).json({ message: 'Project directory does not exist.' });
+    }
+
     // Préparer les opérations bulkWrite pour les nœuds
     const nodeOperations = nodes.map((node: any) => ({
       updateOne: {
         filter: { project: existingProject._id, id: node.id },
-        update: {
+        update: { 
           project: existingProject._id,
           id: node.id || `node_${Date.now()}`,
           type: node.type || 'code',
@@ -76,7 +86,7 @@ export const updateGraph = async (req: Request, res: Response) => {
     const edgeOperations = edges.map((edge: any) => ({
       updateOne: {
         filter: { project: existingProject._id, id: edge.id },
-        update: {
+        update: { 
           project: existingProject._id,
           id: edge.id || `edge_${Date.now()}`,
           source: edge.source || 'unknown_source',
@@ -91,48 +101,45 @@ export const updateGraph = async (req: Request, res: Response) => {
     console.log('Prepared node operations:', nodeOperations);
     console.log('Prepared edge operations:', edgeOperations);
 
-    // Exécuter les opérations bulkWrite
+    let bulkWriteResultNodes, bulkWriteResultEdges;
+
     if (nodeOperations.length > 0) {
-      await NodeModel.bulkWrite(nodeOperations);
-      console.log('Nodes upserted successfully.');
+      bulkWriteResultNodes = await NodeModel.bulkWrite(nodeOperations);
+      console.log('Nodes upserted successfully.', bulkWriteResultNodes);
     }
 
     if (edgeOperations.length > 0) {
-      await Edge.bulkWrite(edgeOperations);
-      console.log('Edges upserted successfully.');
+      bulkWriteResultEdges = await Edge.bulkWrite(edgeOperations);
+      console.log('Edges upserted successfully.', bulkWriteResultEdges);
     }
 
     // Valider les arêtes pour s'assurer que les sources et targets existent
     const existingNodeIds = nodes.map((node: any) => node.id);
-    const invalidEdges = edges.filter((edge: any) =>
+    const invalidEdges = edges.filter((edge: any) => 
       !existingNodeIds.includes(edge.source) || !existingNodeIds.includes(edge.target)
     );
 
     if (invalidEdges.length > 0) {
       console.warn('Invalid edges found:', invalidEdges);
-      return res.status(400).json({
+      return res.status(400).json({ 
         message: 'One or more edges have invalid source or target node IDs.',
-        invalidEdges
+        invalidEdges 
       });
     }
 
     // Écrire les fichiers des nœuds dans le système de fichiers
     for (const node of nodes) {
       const filePath = path.join(projectPath, node.data.fileName);
-      await fs.writeFile(filePath, node.data.code);
-      console.log(`File written: ${filePath}`);
+      try {
+        await fs.writeFile(filePath, node.data.code);
+        console.log(`File written: ${filePath}`);
+      } catch (fsError) {
+        console.error(`Error writing file ${filePath}:`, fsError);
+        return res.status(500).json({ message: `Error writing file for node ${node.id}.`, error: fsError.message });
+      }
     }
 
-    // Récupérer les données mises à jour
-    const updatedNodes = await NodeModel.find({ project: existingProject._id });
-    const updatedEdges = await Edge.find({ project: existingProject._id });
-
-    console.log('Updated graph state:', { nodes: updatedNodes, edges: updatedEdges });
-
-    res.json({
-      message: 'Graph updated successfully.',
-      graph: { nodes: updatedNodes, edges: updatedEdges }
-    });
+    res.json({ message: 'Graph updated successfully.' });
   } catch (error) {
     console.error('Error updating graph:', error);
     res.status(500).json({ message: 'Error updating graph.', error: error.message });
