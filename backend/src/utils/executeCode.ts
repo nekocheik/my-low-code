@@ -1,5 +1,3 @@
-// backend/src/utils/executeCode.ts
-
 import { exec } from 'child_process';
 import path from 'path';
 

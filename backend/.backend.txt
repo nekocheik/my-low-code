@@ -1,3 +1,14 @@
+/// my-low-code-app/backend/src/api/axiosInstance.ts
+
+import axios from 'axios';
+
+const axiosInstance = axios.create({
+  baseURL: 'http://localhost:3000', // URL de base de l'API backend
+});
+
+export default axiosInstance;
+
+---------
 /// my-low-code-app/backend/src/context.ts
 
 // backend/src/context.ts
@@ -46,636 +57,2183 @@ export class Context {
 
 
 ---------
-/// my-low-code-app/backend/src/server.ts
+/// my-low-code-app/backend/src/controllers/authController.ts
 
-// backend/src/server.ts
+// backend/src/controllers/authController.ts
 
-import express, { Request, Response } from 'express';
-import cors from 'cors';
-import bodyParser from 'body-parser';
-import fs from 'fs';
+import { Request, Response } from 'express';
+import User, { IUser } from '../models/User';
+import Joi from 'joi';
+import jwt from 'jsonwebtoken';
+import logger from '../utils/logger';
+
+const SECRET_KEY = process.env.JWT_SECRET || 'your-secret-key'; // Assurez-vous de définir JWT_SECRET dans votre fichier .env
+
+/**
+ * Inscription d'un nouvel utilisateur
+ */
+export const register = async (req: Request, res: Response) => {
+  const schema = Joi.object({
+    username: Joi.string().alphanum().min(3).max(30).required(),
+    password: Joi.string().min(6).required(),
+  });
+
+  const { error } = schema.validate(req.body);
+  if (error) {
+    logger.error(`Registration validation error: ${error.details[0].message}`);
+    return res.status(400).json({ message: error.details[0].message });
+  }
+
+  const { username, password } = req.body;
+
+  try {
+    // Vérifier si l'utilisateur existe déjà
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      logger.warn(`Registration failed: Username "${username}" already exists.`);
+      return res.status(400).json({ message: 'Username already exists.' });
+    }
+
+    // Créer un nouvel utilisateur
+    const newUser = new User({ username, password });
+    await newUser.save();
+
+    logger.info(`User "${username}" registered successfully.`);
+    res.status(201).json({ message: 'User registered successfully.' });
+  } catch (error: any) {
+    logger.error(`Error during registration: ${error.message}`);
+    res.status(500).json({ message: 'Registration failed.', error: error.message });
+  }
+};
+
+/**
+ * Connexion d'un utilisateur existant
+ */
+export const login = async (req: Request, res: Response) => {
+  const schema = Joi.object({
+    username: Joi.string().required(),
+    password: Joi.string().required(),
+  });
+
+  const { error } = schema.validate(req.body);
+  if (error) {
+    logger.error(`Login validation error: ${error.details[0].message}`);
+    return res.status(400).json({ message: error.details[0].message });
+  }
+
+  const { username, password } = req.body;
+
+  try {
+    // Trouver l'utilisateur
+    const user = await User.findOne({ username });
+    if (!user) {
+      logger.warn(`Login failed: Username "${username}" not found.`);
+      return res.status(400).json({ message: 'Invalid username or password.' });
+    }
+
+    // Comparer les mots de passe
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      logger.warn(`Login failed: Incorrect password for username "${username}".`);
+      return res.status(400).json({ message: 'Invalid username or password.' });
+    }
+
+    // Créer un token JWT
+    const token = jwt.sign({ userId: user._id }, SECRET_KEY, { expiresIn: '1h' });
+
+    logger.info(`User "${username}" logged in successfully.`);
+    res.json({ message: 'Login successful.', token });
+  } catch (error: any) {
+    logger.error(`Error during login: ${error.message}`);
+    res.status(500).json({ message: 'Login failed.', error: error.message });
+  }
+};
+
+
+---------
+/// my-low-code-app/backend/src/controllers/devServerController.ts
+
+// backend/src/controllers/devServerController.ts
+
+import { Request, Response } from 'express';
+import { exec, ChildProcess } from 'child_process';
 import path from 'path';
-import { exec } from 'child_process';
-import { Node, ProjectGraph, Edge } from './types';
-import { compileNodes } from './utils';
-import { Context } from './context';
-import { Linter } from 'eslint';
-import ivm from 'isolated-vm';
+import fs from 'fs/promises';
+import portfinder from 'portfinder';
+import logger from '../utils/logger'; // Assurez-vous d'avoir configuré un logger, par exemple avec winston
 
-const app = express();
-const PORT = 3000;
-
-// Middleware
-app.use(cors());
-app.use(bodyParser.json());
-
-const PROJECTS_DIR = path.join(__dirname, 'projects');
-
-// Assurer que le répertoire des projets existe
-if (!fs.existsSync(PROJECTS_DIR)) {
-  fs.mkdirSync(PROJECTS_DIR);
-}
-
-// Create initial graph for a project
-function createInitialGraph(): ProjectGraph {
-  return {
-    nodes: [
-      {
-        id: 'initial_node',
-        type: 'code',
-        position: { x: 100, y: 100 },
-        data: {
-          label: 'index.js',
-          fileName: 'index.js',
-          imports: [],
-          code: '// Your code here\nconsole.log("Hello World");',
-          exportedFunctions: []
-        }
-      }
-    ],
-    edges: []
-  };
-}
+let devServerProcess: ChildProcess | null = null;
 
 /**
- * Create a new project
+ * Démarre un serveur de développement pour un projet donné.
+ * @param req - Requête Express contenant le nom du projet dans le corps.
+ * @param res - Réponse Express.
  */
-app.post('/create-project', (req: Request, res: Response) => {
-  const { projectCode, projectName } = req.body;
-
-  if (!projectCode || !projectName) {
-    return res.status(400).json({ message: 'projectCode and projectName are required.' });
-  }
-
-  const projectDirName = `${projectCode}-${projectName}`;
-  const projectPath = path.join(PROJECTS_DIR, projectDirName);
-
-  if (fs.existsSync(projectPath)) {
-    return res.status(400).json({ message: 'Project already exists.' });
-  }
-
-  fs.mkdirSync(projectPath);
-  fs.writeFileSync(path.join(projectPath, 'index.js'), '// Your code here\nconsole.log("Hello World");\n');
-
-  // Create initial graph
-  const initialGraph = createInitialGraph();
-  fs.writeFileSync(path.join(projectPath, 'graph.json'), JSON.stringify(initialGraph, null, 2));
-
-  return res.status(201).json({ message: 'Project created successfully.', projectPath: projectDirName });
-});
-
-/**
- * Get list of projects
- */
-app.get('/projects', (req: Request, res: Response) => {
-  const projects = fs.readdirSync(PROJECTS_DIR);
-  return res.status(200).json(projects);
-});
-
-/**
- * Initialize project graph
- */
-app.post('/init-project-graph', (req: Request, res: Response) => {
+export const startDevServer = async (req: Request, res: Response) => {
   const { project } = req.body;
 
   if (!project) {
-    return res.status(400).json({ message: 'Project name is required.' });
+    logger.error('Error: Project is required to start the development server.');
+    return res.status(400).json({ message: 'Project is required.' });
   }
 
-  const projectPath = path.join(PROJECTS_DIR, project);
-  const graphPath = path.join(projectPath, 'graph.json');
-
-  if (!fs.existsSync(projectPath)) {
-    return res.status(404).json({ message: 'Project not found.' });
+  if (devServerProcess) {
+    logger.warn('Attempted to start development server, but one is already running.');
+    return res.status(400).json({ message: 'Development server is already running.' });
   }
 
-  // Create initial graph
-  const initialGraph = createInitialGraph();
-  fs.writeFileSync(graphPath, JSON.stringify(initialGraph, null, 2));
-
-  return res.status(200).json({ message: 'Project graph initialized successfully.', graph: initialGraph });
-});
-
-/**
- * Get file content
- */
-app.get('/file-content', (req: Request, res: Response) => {
-  const { project, file } = req.query;
-
-  if (!project || !file) {
-    return res.status(400).json({ message: 'Project and file are required.' });
-  }
-
-  const filePath = path.join(PROJECTS_DIR, project as string, file as string);
-
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ message: 'File not found.' });
-  }
-
-  const code = fs.readFileSync(filePath, 'utf-8');
-  return res.status(200).json({ code });
-});
-
-/**
- * Update file content and project graph
- */
-app.post('/update-file', (req: Request, res: Response) => {
-  const { project, nodeId, nodeData } = req.body;
-
-  if (!project || !nodeId || !nodeData) {
-    return res.status(400).json({ message: 'Project, nodeId, and nodeData are required.' });
-  }
-
-  const projectPath = path.join(PROJECTS_DIR, project);
-
-  if (!fs.existsSync(projectPath)) {
-    return res.status(404).json({ message: 'Project not found.' });
-  }
-
-  const { fileName, imports, code, position } = nodeData;
-  const filePath = path.join(projectPath, fileName);
+  const projectPath = path.join(__dirname, '..', 'projects', project);
 
   try {
-    // Écrire les imports et le code dans le fichier
-    let fileContent = '';
-    imports.forEach((imp: string) => {
-      fileContent += `${imp}\n`;
-    });
-    fileContent += `\n${code}`;
-
-    fs.writeFileSync(filePath, fileContent);
-
-    // Extraire les fonctions exportées
-    const exportedFunctions = Context.extractExportedFunctions(code);
-
-    // Lint du code
-    const linter = new Linter();
-    const lintConfig = {
-      env: { es6: true, node: true },
-      parserOptions: { ecmaVersion: 2020, sourceType: 'module' },
-      rules: {
-        'no-unused-vars': 'warn',
-        'no-undef': 'error',
-      },
-    };
-    const lintMessages = linter.verify(code, lintConfig as any);
-
-    // Mettre à jour le graph du projet
-    const graphPath = path.join(projectPath, 'graph.json');
-    let graph: ProjectGraph = { nodes: [], edges: [] };
-    if (fs.existsSync(graphPath)) {
-      graph = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
-    }
-
-    const existingNodeIndex = graph.nodes.findIndex(node => node.id === nodeId);
-    const updatedNode: Node = {
-      id: nodeId,
-      type: 'code',
-      position: position,
-      data: {
-        label: fileName,
-        fileName,
-        imports,
-        code,
-        exportedFunctions,
-      },
-    };
-
-    if (existingNodeIndex !== -1) {
-      graph.nodes[existingNodeIndex] = updatedNode;
-    } else {
-      graph.nodes.push(updatedNode);
-    }
-
-    fs.writeFileSync(graphPath, JSON.stringify(graph, null, 2));
-
-    return res.status(200).json({
-      message: 'File and graph updated successfully.',
-      exportedFunctions,
-      lintMessages,
-    });
+    // Vérifier si le dossier du projet existe
+    await fs.access(projectPath);
+    logger.info(`Starting development server for project: ${project} at path: ${projectPath}`);
   } catch (error) {
-    console.error('Error updating file or graph:', error);
-    return res.status(500).json({ message: 'Error updating file or graph.', error });
+    logger.error(`Project directory does not exist: ${projectPath}`);
+    return res.status(404).json({ message: 'Project directory does not exist.' });
   }
-});
+
+  try {
+    // Trouver un port libre à partir de 4000
+    const port = await portfinder.getPortPromise({ port: 4000 });
+
+    // Commande pour démarrer le serveur de développement (par exemple, avec nodemon)
+    const command = `npx nodemon index.js`; // Assurez-vous que 'index.js' est le fichier d'entrée de votre projet
+
+    devServerProcess = exec(`PORT=${port} ${command}`, { cwd: projectPath }, (error, stdout, stderr) => {
+      if (error) {
+        logger.error(`Development server error: ${error.message}`);
+        return;
+      }
+      if (stderr) {
+        logger.error(`Development server stderr: ${stderr}`);
+        return;
+      }
+      logger.info(`Development server stdout: ${stdout}`);
+    });
+
+    // Gestion de la sortie du processus
+    devServerProcess.on('exit', (code, signal) => {
+      logger.info(`Development server exited with code ${code} and signal ${signal}`);
+      devServerProcess = null;
+    });
+
+    logger.info(`Development server started successfully on port ${port}`);
+    res.json({ message: 'Development server started successfully.', port });
+  } catch (error: any) {
+    logger.error(`Failed to start development server: ${error.message}`);
+    res.status(500).json({ message: 'Failed to start development server.', error: error.message });
+  }
+};
 
 /**
- * Install a package in a project
+ * Arrête le serveur de développement en cours.
+ * @param req - Requête Express.
+ * @param res - Réponse Express.
  */
-app.post('/install-package', (req: Request, res: Response) => {
-  const { project, packageName } = req.body;
-
-  if (!project || !packageName) {
-    return res.status(400).json({ message: 'Project and packageName are required.' });
+export const stopDevServer = async (req: Request, res: Response) => {
+  if (!devServerProcess) {
+    logger.warn('Attempted to stop development server, but none is running.');
+    return res.status(400).json({ message: 'Development server is not running.' });
   }
 
-  const projectPath = path.join(PROJECTS_DIR, project);
-
-  if (!fs.existsSync(projectPath)) {
-    return res.status(404).json({ message: 'Project not found.' });
+  try {
+    devServerProcess.kill();
+    logger.info('Development server stopped successfully.');
+    devServerProcess = null;
+    res.json({ message: 'Development server stopped successfully.' });
+  } catch (error: any) {
+    logger.error(`Failed to stop development server: ${error.message}`);
+    res.status(500).json({ message: 'Failed to stop development server.', error: error.message });
   }
+};
 
-  // Execute 'npm install' for the specified package
-  exec(`npm install ${packageName}`, { cwd: projectPath }, (error: Error | null, stdout: string, stderr: string) => {
-    if (error) {
-      return res.status(500).json({ message: 'Error installing package.', error: error.message, stderr });
-    }
-    return res.status(200).json({ message: 'Package installed successfully.', stdout, stderr });
-  });
-});
 
-/**
- * Execute project code from a specific node using isolated-vm
- */
-app.post('/execute', async (req: Request, res: Response) => {
+---------
+/// my-low-code-app/backend/src/controllers/executeController.ts
+
+import { Request, Response } from 'express';
+import Project from '../models/Project';
+import NodeModel from '../models/Node';
+import { exec } from 'child_process';
+import path from 'path';
+import fs from 'fs/promises';
+
+export const executeNode = async (req: Request, res: Response) => {
   const { project, nodeId } = req.body;
 
   if (!project || !nodeId) {
+    console.log('Error: Missing project or nodeId');
     return res.status(400).json({ message: 'Project and nodeId are required.' });
   }
 
-  const projectPath = path.join(PROJECTS_DIR, project);
-  const graphPath = path.join(projectPath, 'graph.json');
+  try {
+    // Find the project
+    console.log(`Looking for project: ${project}`);
+    const existingProject = await Project.findOne({ name: project });
+    if (!existingProject) {
+      console.log('Error: Project not found');
+      return res.status(404).json({ message: 'Project not found.' });
+    }
 
-  if (!fs.existsSync(graphPath)) {
-    return res.status(404).json({ message: 'Project graph not found.' });
+    // Find the node
+    console.log(`Looking for node with ID: ${nodeId}`);
+    const node = await NodeModel.findOne({ project: existingProject._id, id: nodeId });
+    if (!node) {
+      console.log('Error: Node not found');
+      return res.status(404).json({ message: 'Node not found.' });
+    }
+
+    // Resolve the path to the node file
+    const projectPath = path.join(__dirname, '..', 'projects', project);
+    const filePath = path.join(projectPath, node.data.fileName);
+    console.log(`Resolved file path: ${filePath}`);
+
+    // Check if the file exists
+    try {
+      await fs.access(filePath);
+    } catch (error) {
+      console.log('Error: Node file does not exist');
+      return res.status(404).json({ message: 'Node file does not exist.' });
+    }
+
+    // Execute the file
+    const command = `node ${filePath}`;
+    console.log(`Executing command: ${command}`);
+    exec(command, { cwd: projectPath }, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error executing node: ${error.message}`);
+        return res.status(500).json({ message: 'Error executing node.', error: error.message });
+      }
+
+      console.log('Node executed successfully');
+      console.log(`stdout: ${stdout}`);
+      console.log(`stderr: ${stderr}`);
+
+      res.json({
+        message: 'Node executed successfully.',
+        stdout: stdout.trim(),
+        stderr: stderr.trim(),
+      });
+    });
+
+  } catch (error: any) {
+    console.error('Error during node execution:', error);
+    res.status(500).json({ message: 'Error during node execution.', error: error.message });
+  }
+};
+
+
+---------
+/// my-low-code-app/backend/src/controllers/fileController.ts
+
+// backend/src/controllers/fileController.ts
+
+import { Request, Response } from 'express';
+import Project from '../models/Project';
+import NodeModel from '../models/Node';
+import { getFilePath, writeFile, checkFileExists } from '../utils/fileUtils';
+import fs from 'fs/promises';
+import Joi from 'joi';
+import logger from '../utils/logger';
+
+/**
+ * Met à jour un fichier de nœud spécifique dans un projet.
+ * @param req - Requête Express contenant project, nodeId et nodeData dans le corps.
+ * @param res - Réponse Express.
+ */
+export const updateFile = async (req: Request, res: Response) => {
+  const { project, nodeId, nodeData } = req.body;
+
+  // Validation des données entrantes
+  const schema = Joi.object({
+    project: Joi.string().required(),
+    nodeId: Joi.string().required(),
+    nodeData: Joi.object({
+      label: Joi.string().required(),
+      fileName: Joi.string().required(),
+      imports: Joi.array().items(Joi.string()).required(),
+      code: Joi.string().required(),
+      exportedFunctions: Joi.array().items(Joi.string()).required(),
+      lintErrors: Joi.array().items(Joi.any()).optional(),
+    }).required(),
+  });
+
+  const { error } = schema.validate({ project, nodeId, nodeData });
+  if (error) {
+    logger.error(`Validation error: ${error.details[0].message}`);
+    return res.status(400).json({ message: error.details[0].message });
   }
 
   try {
-    const graph: ProjectGraph = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
-    const compiledCode = compileNodes(graph, nodeId);
+    // Trouver et mettre à jour le nœud dans la base de données
+    const updatedNode = await NodeModel.findOneAndUpdate(
+      { project, id: nodeId },
+      { $set: { data: nodeData } },
+      { new: true, runValidators: true }
+    );
 
-    const isolate = new ivm.Isolate({ memoryLimit: 256 });
-    const context = await isolate.createContext();
+    if (!updatedNode) {
+      logger.warn(`Node not found: project="${project}", nodeId="${nodeId}"`);
+      return res.status(404).json({ message: 'Node not found.' });
+    }
 
-    console.log("ici 1", { compiledCode });
+    // Résoudre le chemin du fichier
+    const filePath = getFilePath(project, nodeData.fileName);
+    logger.info(`Resolved file path: ${filePath}`);
 
-    const allowedModules = ['lodash', 'moment']; // Liste des modules autorisés
+    // Vérifier si le fichier existe
+    const fileExists = await checkFileExists(filePath);
+    let currentFileContent = '';
 
-    // Injecter une fonction require limitée (optionnel et à utiliser avec précaution)
-    await context.global.set('require', new ivm.Reference((moduleName: string) => {
-      if (!allowedModules.includes(moduleName)) {
-        throw new Error(`Module "${moduleName}" is not allowed.`);
-      }
-      return require(moduleName);
-    }), { copy: true }); // Utiliser copy: false
+    // Lire le contenu actuel du fichier si il existe
+    if (fileExists) {
+      currentFileContent = await fs.readFile(filePath, 'utf8');
+      logger.info(`Current file content loaded from: ${filePath}`);
+    } else {
+      logger.warn(`File does not exist: ${filePath}`);
+    }
 
-    let stdout = '';
-    let stderr = '';
+    // Écrire le fichier seulement si le contenu a changé
+    if (currentFileContent !== nodeData.code) {
+      await writeFile(filePath, nodeData.code);
+      logger.info(`File updated: ${filePath}`);
+    } else {
+      logger.info('No changes in file content, skipping file write.');
+    }
 
-    // Configurer console.log et console.error avec copy: false
-    const logRef = new ivm.Reference((...args: any[]) => {
-      stdout += args.map(arg => (typeof arg === 'object' ? JSON.stringify(arg) : String(arg))).join(' ') + '\n';
-    });
-    const errorRef = new ivm.Reference((...args: any[]) => {
-      stderr += args.map(arg => (typeof arg === 'object' ? JSON.stringify(arg) : String(arg))).join(' ') + '\n';
-    });
-
-    await context.global.set('console', {
-      log: logRef,
-      error: errorRef,
-    }, { copy: true }); // Changement ici: copy: false
-
-    // Envelopper le code dans une IIFE async pour gérer les promesses
-    const wrappedCode = `
-      (async () => {
-        try {
-          ${compiledCode}
-          return { success: true, result: "Execution completed successfully" };
-        } catch (error) {
-          console.error(error.toString());
-          return { success: false, error: error.toString() };
-        }
-      })()
-    `;
-
-    // Log du code compilé pour débogage
-    console.log('Compiled Code:', compiledCode);
-    console.log('Wrapped Code:', wrappedCode);
-
-    // Compiler et exécuter le script
-    const script = await isolate.compileScript(wrappedCode);
-    const rawResult = await script.run(context, { timeout: 5000 });
-
-    // Copier le résultat de l'exécution
-    const result = await rawResult.copy();
-
-    // Nettoyage de l'environnement isolé
-    context.release();
-    isolate.dispose();
-
-    return res.status(200).json({
-      result: result.success ? result.result : result.error,
-      stdout,
-      stderr,
-    });
+    res.json({ message: 'Node updated successfully.', node: updatedNode });
   } catch (error: any) {
-    console.error('Execution error:', error);
-    return res.status(500).json({
-      message: 'Error compiling or executing code.',
-      error: error.message,
-      stack: error.stack,
-    });
+    logger.error(`Error updating file: ${error.message}`);
+    res.status(500).json({ message: 'Error updating file.', error: error.message });
   }
-});
+};
 
 /**
- * Get project graph
+ * Récupère les fonctions accessibles pour un nœud spécifique.
+ * (À implémenter selon vos besoins spécifiques)
+ * @param req - Requête Express.
+ * @param res - Réponse Express.
  */
-app.get('/project-graph', (req: Request, res: Response) => {
-  const { project } = req.query;
-
-  if (!project || typeof project !== 'string') {
-    return res.status(400).json({ message: 'Project is required as a query parameter.' });
-  }
-
-  const projectPath = path.join(PROJECTS_DIR, project);
-  const graphPath = path.join(projectPath, 'graph.json');
-
-  if (!fs.existsSync(graphPath)) {
-    const initialGraph = createInitialGraph();
-    fs.writeFileSync(graphPath, JSON.stringify(initialGraph, null, 2));
-    return res.status(200).json({ graph: initialGraph });
-  }
-
-  const graph: ProjectGraph = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
-  return res.status(200).json({ graph });
-});
-
-/**
- * Get accessible exported functions via dependencies
- */
-
-app.get('/accessible-functions', (req: Request, res: Response) => {
+export const getAccessibleFunctions = async (req: Request, res: Response) => {
   const { project, nodeId } = req.query;
 
   if (!project || typeof project !== 'string' || !nodeId || typeof nodeId !== 'string') {
-    return res.status(400).json({ message: 'Project and nodeId are required as query parameters.' });
+    logger.error('Invalid query parameters for getAccessibleFunctions.');
+    return res.status(400).json({ message: 'Project and nodeId are required and must be strings.' });
   }
 
-  const projectPath = path.join(PROJECTS_DIR, project);
-  const graphPath = path.join(projectPath, 'graph.json');
+  try {
+    // Logique pour récupérer les fonctions accessibles
+    // Cela dépend de la structure de vos nœuds et de comment les fonctions sont exposées
 
-  if (!fs.existsSync(graphPath)) {
-    return res.status(404).json({ message: 'Project graph not found.' });
-  }
-
-  const graph: ProjectGraph = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
-  const edgesFromNode = graph.edges.filter(edge => edge.source === nodeId);
-  const accessibleFunctions: string[] = [];
-
-  edgesFromNode.forEach(edge => {
-    const targetNode = graph.nodes.find(node => node.id === edge.target);
-    if (targetNode) {
-      accessibleFunctions.push(...targetNode.data.exportedFunctions);
+    // Exemple hypothétique :
+    const node = await NodeModel.findOne({ project, id: nodeId });
+    if (!node) {
+      logger.warn(`Node not found for accessible functions: project="${project}", nodeId="${nodeId}"`);
+      return res.status(404).json({ message: 'Node not found.' });
     }
-  });
 
-  return res.status(200).json({ accessibleFunctions });
-});
+    // Supposons que les fonctions exportées sont stockées dans node.data.exportedFunctions
+    const accessibleFunctions = node.data.exportedFunctions;
+
+    res.json({ accessibleFunctions });
+  } catch (error: any) {
+    logger.error(`Error fetching accessible functions: ${error.message}`);
+    res.status(500).json({ message: 'Error fetching accessible functions.', error: error.message });
+  }
+};
 
 /**
- * Delete a node from a project
+ * Met à jour un fichier de nœud spécifique. (Alternative ou extension de updateFile)
+ * @param req - Requête Express.
+ * @param res - Réponse Express.
  */
-app.post('/delete-node', (req: Request, res: Response) => {
+export const updateNode = async (req: Request, res: Response) => {
+  console.log('Request received for updating node');
+  const { project, nodeId, nodeData } = req.body;
+
+  // Log the incoming data
+  console.log('Incoming request data:', { project, nodeId, nodeData });
+
+  if (!project || !nodeId || !nodeData) {
+    console.log('Validation failed: Missing project, nodeId, or nodeData');
+    return res.status(400).json({ message: 'Project, nodeId, and nodeData are required.' });
+  }
+
+  try {
+    // Check that all required fields in nodeData are present
+    const requiredFields = ['label', 'fileName', 'code'];
+    for (const field of requiredFields) {
+      if (!nodeData[field]) {
+        console.log(`Validation failed: Field '${field}' is missing in nodeData`);
+        return res.status(400).json({ message: `Field '${field}' is required in nodeData.` });
+      }
+    }
+
+    // Try to find and update the node in the database
+    console.log('Finding node in the database...');
+    const updatedNode = await NodeModel.findOneAndUpdate(
+      { project, id: nodeId },
+      { $set: { data: nodeData } },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedNode) {
+      console.log('Node not found in the database.');
+      return res.status(404).json({ message: 'Node not found.' });
+    }
+
+    console.log('Node successfully updated in the database:', updatedNode);
+
+    // Now write the updated code to the file system
+    const filePath = getFilePath(project, nodeData.fileName);
+    console.log('Resolved file path:', filePath);
+
+    await writeFile(filePath, nodeData.code);
+    console.log(`File successfully written to path: ${filePath}`);
+
+    res.json({ message: 'Node updated successfully.', node: updatedNode });
+  } catch (error) {
+    // Catch and log any errors that occur
+    console.error('Error updating node or writing file:', error);
+    res.status(500).json({ message: 'Error updating node or writing file.', error: error.message });
+  }
+};
+
+
+---------
+/// my-low-code-app/backend/src/controllers/gitController.ts
+
+import { Request, Response } from 'express';
+import simpleGit, { SimpleGit } from 'simple-git';
+import path from 'path';
+
+const git: SimpleGit = simpleGit();
+
+export const commitChanges = async (req: Request, res: Response) => {
+  const { project, message } = req.body;
+
+  if (!project || !message) {
+    return res.status(400).json({ message: 'Project and commit message are required.' });
+  }
+
+  const projectPath = path.join(__dirname, '..', 'projects', project);
+
+  try {
+    await git.cwd(projectPath);
+    await git.add('.');
+    await git.commit(message);
+    res.json({ message: 'Changes committed successfully.' });
+  } catch (error: any) {
+    console.error('Error committing changes:', error);
+    res.status(500).json({ message: 'Error committing changes.', error: error.message });
+  }
+};
+
+export const pushChanges = async (req: Request, res: Response) => {
+  const { project } = req.body;
+
+  if (!project) {
+    return res.status(400).json({ message: 'Project is required.' });
+  }
+
+  const projectPath = path.join(__dirname, '..', 'projects', project);
+
+  try {
+    await git.cwd(projectPath);
+    await git.push();
+    res.json({ message: 'Changes pushed to GitHub successfully.' });
+  } catch (error: any) {
+    console.error('Error pushing changes:', error);
+    res.status(500).json({ message: 'Error pushing changes.', error: error.message });
+  }
+};
+
+export const pullChanges = async (req: Request, res: Response) => {
+  const { project } = req.body;
+
+  if (!project) {
+    return res.status(400).json({ message: 'Project is required.' });
+  }
+
+  const projectPath = path.join(__dirname, '..', 'projects', project);
+
+  try {
+    await git.cwd(projectPath);
+    await git.pull();
+    res.json({ message: 'Changes pulled from GitHub successfully.' });
+  } catch (error: any) {
+    console.error('Error pulling changes:', error);
+    res.status(500).json({ message: 'Error pulling changes.', error: error.message });
+  }
+};
+
+
+---------
+/// my-low-code-app/backend/src/controllers/graphController.ts
+
+// backend/src/controllers/graphController.ts
+
+import { Request, Response } from 'express';
+import Project from '../models/Project';
+import NodeModel from '../models/Node';
+import Edge from '../models/Edge';
+import path from 'path';
+import fs from 'fs/promises';
+
+export const getProjectGraph = async (req: Request, res: Response) => {
+  const { project } = req.query;
+
+  if (!project || typeof project !== 'string') {
+    return res.status(400).json({ message: 'Project is required and must be a string.' });
+  }
+
+  try {
+    const existingProject = await Project.findOne({ name: project });
+    if (!existingProject) {
+      return res.status(404).json({ message: 'Project not found.' });
+    }
+
+    const nodes = await NodeModel.find({ project: existingProject._id });
+    const edges = await Edge.find({ project: existingProject._id });
+
+    res.json({ graph: { nodes, edges } });
+  } catch (error) {
+    console.error('Error fetching project graph:', error);
+    res.status(500).json({ message: 'Error fetching project graph.' });
+  }
+};
+
+export const updateGraph = async (req: Request, res: Response) => {
+  const { project, nodes, edges } = req.body;
+
+  console.log('Received updateGraph request:', req.body); // Log des données reçues
+
+  if (!project || !nodes || !edges) {
+    return res.status(400).json({ message: 'Project, nodes, and edges are required.' });
+  }
+
+  if (typeof project !== 'string' || !Array.isArray(nodes) || !Array.isArray(edges)) {
+    return res.status(400).json({ message: 'Invalid data types for project, nodes, or edges.' });
+  }
+
+  try {
+    const existingProject = await Project.findOne({ name: project });
+    if (!existingProject) {
+      console.error(`Project "${project}" not found.`);
+      return res.status(404).json({ message: 'Project not found.' });
+    }
+
+    const projectPath = path.join(__dirname, '..', 'projects', project);
+
+    // Vérifier si le dossier du projet existe
+    try {
+      await fs.access(projectPath);
+    } catch (err) {
+      console.error(`Project directory "${projectPath}" does not exist.`);
+      return res.status(400).json({ message: 'Project directory does not exist.' });
+    }
+
+    // Préparer les opérations bulkWrite pour les nœuds
+    const nodeOperations = nodes.map((node: any) => ({
+      updateOne: {
+        filter: { project: existingProject._id, id: node.id },
+        update: { 
+          project: existingProject._id,
+          id: node.id || `node_${Date.now()}`,
+          type: node.type || 'code',
+          position: node.position || { x: 0, y: 0 },
+          data: {
+            label: node.data.label || node.data.fileName || 'Unnamed Node',
+            fileName: node.data.fileName || 'UnnamedFile.js',
+            imports: node.data.imports || [],
+            code: node.data.code || '// No code provided',
+            exportedFunctions: node.data.exportedFunctions || [],
+            lintErrors: node.data.lintErrors || [],
+          },
+        },
+        upsert: true,
+      },
+    }));
+
+    // Préparer les opérations bulkWrite pour les arêtes
+    const edgeOperations = edges.map((edge: any) => ({
+      updateOne: {
+        filter: { project: existingProject._id, id: edge.id },
+        update: { 
+          project: existingProject._id,
+          id: edge.id || `edge_${Date.now()}`,
+          source: edge.source || 'unknown_source',
+          target: edge.target || 'unknown_target',
+          animated: edge.animated || false,
+          style: edge.style || {},
+        },
+        upsert: true,
+      },
+    }));
+
+    console.log('Prepared node operations:', nodeOperations);
+    console.log('Prepared edge operations:', edgeOperations);
+
+    let bulkWriteResultNodes, bulkWriteResultEdges;
+
+    if (nodeOperations.length > 0) {
+      bulkWriteResultNodes = await NodeModel.bulkWrite(nodeOperations);
+      console.log('Nodes upserted successfully.', bulkWriteResultNodes);
+    }
+
+    if (edgeOperations.length > 0) {
+      bulkWriteResultEdges = await Edge.bulkWrite(edgeOperations);
+      console.log('Edges upserted successfully.', bulkWriteResultEdges);
+    }
+
+    // Valider les arêtes pour s'assurer que les sources et targets existent
+    const existingNodeIds = nodes.map((node: any) => node.id);
+    const invalidEdges = edges.filter((edge: any) => 
+      !existingNodeIds.includes(edge.source) || !existingNodeIds.includes(edge.target)
+    );
+
+    if (invalidEdges.length > 0) {
+      console.warn('Invalid edges found:', invalidEdges);
+      return res.status(400).json({ 
+        message: 'One or more edges have invalid source or target node IDs.',
+        invalidEdges 
+      });
+    }
+
+    // Écrire les fichiers des nœuds dans le système de fichiers
+    for (const node of nodes) {
+      const filePath = path.join(projectPath, node.data.fileName);
+      try {
+        await fs.writeFile(filePath, node.data.code);
+        console.log(`File written: ${filePath}`);
+      } catch (fsError) {
+        console.error(`Error writing file ${filePath}:`, fsError);
+        return res.status(500).json({ message: `Error writing file for node ${node.id}.`, error: fsError.message });
+      }
+    }
+
+    res.json({ message: 'Graph updated successfully.' });
+  } catch (error) {
+    console.error('Error updating graph:', error);
+    res.status(500).json({ message: 'Error updating graph.', error: error.message });
+  }
+};
+
+export const deleteNode = async (req: Request, res: Response) => {
   const { project, nodeId } = req.body;
 
   if (!project || !nodeId) {
     return res.status(400).json({ message: 'Project and nodeId are required.' });
   }
 
-  const projectPath = path.join(PROJECTS_DIR, project);
-  const graphPath = path.join(projectPath, 'graph.json');
-
-  if (!fs.existsSync(graphPath)) {
-    return res.status(404).json({ message: 'Project graph not found.' });
-  }
-
   try {
-    const graph: ProjectGraph = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
-    graph.nodes = graph.nodes.filter(node => node.id !== nodeId);
-    graph.edges = graph.edges.filter(edge => edge.source !== nodeId && edge.target !== nodeId);
-    fs.writeFileSync(graphPath, JSON.stringify(graph, null, 2));
-
-    const filePath = path.join(projectPath, nodeId);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    const existingProject = await Project.findOne({ name: project });
+    if (!existingProject) {
+      return res.status(404).json({ message: 'Project not found.' });
     }
 
-    return res.status(200).json({ message: 'Node deleted successfully.' });
-  } catch (error) {
-    return res.status(500).json({ message: 'Error deleting node.', error });
-  }
-});
+    // Trouver le nœud à supprimer
+    const nodeToDelete = await NodeModel.findOne({ project: existingProject._id, id: nodeId });
+    if (!nodeToDelete) {
+      return res.status(404).json({ message: 'Node not found.' });
+    }
 
-/**
- * Clone a node in a project
- */
-app.post('/clone-node', (req: Request, res: Response) => {
+    // Chemin vers le dossier du projet
+    const projectPath = path.join(__dirname, '..', 'projects', project);
+    const filePath = path.join(projectPath, nodeToDelete.data.fileName);
+
+    // Supprimer le fichier du nœud
+    try {
+      await fs.unlink(filePath);
+      console.log(`File deleted: ${filePath}`);
+    } catch (error) {
+      console.warn(`File not found for deletion: ${filePath}`);
+    }
+
+    // Supprimer le nœud
+    await NodeModel.deleteOne({ project: existingProject._id, id: nodeId });
+
+    // Supprimer les arêtes associées
+    await Edge.deleteMany({ project: existingProject._id, $or: [{ source: nodeId }, { target: nodeId }] });
+
+    res.json({ message: 'Node and associated edges deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting node:', error);
+    res.status(500).json({ message: 'Error deleting node.' });
+  }
+};
+
+export const cloneNode = async (req: Request, res: Response) => {
   const { project, nodeId, newNodeId } = req.body;
 
   if (!project || !nodeId || !newNodeId) {
-    return res.status(400).json({ message: 'Project, nodeId and newNodeId are required.' });
-  }
-
-  const projectPath = path.join(PROJECTS_DIR, project);
-  const graphPath = path.join(projectPath, 'graph.json');
-  if (!fs.existsSync(graphPath)) {
-    return res.status(404).json({ message: 'Project graph not found.' });
+    return res.status(400).json({ message: 'Project, nodeId, and newNodeId are required.' });
   }
 
   try {
-    const graph: ProjectGraph = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
-    const nodeToClone = graph.nodes.find(node => node.id === nodeId);
+    const existingProject = await Project.findOne({ name: project });
+    if (!existingProject) {
+      return res.status(404).json({ message: 'Project not found.' });
+    }
 
+    const nodeToClone = await NodeModel.findOne({ project: existingProject._id, id: nodeId });
     if (!nodeToClone) {
       return res.status(404).json({ message: 'Node to clone not found.' });
     }
 
-    const clonedNode: Node = {
-      ...nodeToClone,
-      id: newNodeId,
-      data: {
-        ...nodeToClone.data,
-        fileName: `clone_${nodeToClone.data.fileName}`,
-      },
-      position: {
-        x: nodeToClone.position.x + 50,
-        y: nodeToClone.position.y + 50,
-      },
+    const clonedNode = nodeToClone.toObject();
+    clonedNode.id = newNodeId;
+    clonedNode.position = {
+      x: clonedNode.position.x + 100,
+      y: clonedNode.position.y + 100,
     };
+    clonedNode.data = {
+      ...clonedNode.data,
+      label: `${clonedNode.data.label} (Clone)`,
+      fileName: `${clonedNode.data.fileName.split('.').slice(0, -1).join('.')}_clone.${clonedNode.data.fileName.split('.').pop()}`,
+    };
+    delete clonedNode._id;
 
-    graph.nodes.push(clonedNode);
-    fs.writeFileSync(graphPath, JSON.stringify(graph, null, 2));
+    // Chemin vers le dossier du projet
+    const projectPath = path.join(__dirname, '..', 'projects', project);
+    const newFilePath = path.join(projectPath, clonedNode.data.fileName);
 
-    const originalFilePath = path.join(projectPath, nodeToClone.data.fileName);
-    const clonedFilePath = path.join(projectPath, clonedNode.data.fileName);
-    if (fs.existsSync(originalFilePath)) {
-      fs.copyFileSync(originalFilePath, clonedFilePath);
+    // Créer et écrire le fichier cloné
+    await fs.writeFile(newFilePath, clonedNode.data.code);
+    console.log(`Cloned file created: ${newFilePath}`);
+
+    const newNode = new NodeModel(clonedNode);
+    await newNode.save();
+
+    res.json({ message: 'Node cloned successfully.', clonedNode: newNode });
+  } catch (error) {
+    console.error('Error cloning node:', error);
+    res.status(500).json({ message: 'Error cloning node.' });
+  }
+};
+
+
+---------
+/// my-low-code-app/backend/src/controllers/importController.ts
+
+import { Request, Response } from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs/promises';
+import Joi from 'joi';
+import Project from '../models/Project';
+import NodeModel from '../models/Node';
+import logger from '../utils/logger';
+
+/**
+ * Configuration de Multer pour stocker les fichiers uploadés dans un dossier temporaire
+ */
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+/**
+ * Type pour les données du fichier de projet importé
+ */
+interface ImportedProject {
+  projectName: string;
+  nodes: Array<{
+    id: string;
+    type: string;
+    position: { x: number; y: number };
+    data: {
+      label: string;
+      fileName: string;
+      imports: string[];
+      code: string;
+      exportedFunctions: string[];
+      lintErrors?: any[];
+    };
+  }>;
+  edges: Array<{
+    id: string;
+    source: string;
+    target: string;
+    animated?: boolean;
+    label?: string;
+  }>;
+}
+
+/**
+ * Importe un projet depuis un fichier JSON
+ * @param req - Requête Express avec le fichier uploadé
+ * @param res - Réponse Express
+ */
+export const importProject = [
+  upload.single('projectFile'),
+  async (req: Request, res: Response) => {
+    // Validation des données
+    if (!req.file) {
+      logger.error('No file uploaded for project import.');
+      return res.status(400).json({ message: 'Aucun fichier uploadé.' });
     }
 
-    return res.status(200).json({ message: 'Node cloned successfully.', clonedNode });
-  } catch (error) {
-    return res.status(500).json({ message: 'Error cloning node.', error });
-  }
-});
+    try {
+      const projectData: ImportedProject = JSON.parse(req.file.buffer.toString('utf-8'));
 
-/**
- * Update project graph
- */
-app.post('/update-graph', (req: Request, res: Response) => {
-  const { project, nodes, edges } = req.body;
+      // Valider la structure du fichier
+      const schema = Joi.object({
+        projectName: Joi.string().alphanum().min(3).max(30).required(),
+        nodes: Joi.array().items(
+          Joi.object({
+            id: Joi.string().required(),
+            type: Joi.string().required(),
+            position: Joi.object({
+              x: Joi.number().required(),
+              y: Joi.number().required(),
+            }).required(),
+            data: Joi.object({
+              label: Joi.string().required(),
+              fileName: Joi.string().required(),
+              imports: Joi.array().items(Joi.string()).required(),
+              code: Joi.string().required(),
+              exportedFunctions: Joi.array().items(Joi.string()).required(),
+              lintErrors: Joi.array().items(Joi.any()).optional(),
+            }).required(),
+          })
+        ).required(),
+        edges: Joi.array().items(
+          Joi.object({
+            id: Joi.string().required(),
+            source: Joi.string().required(),
+            target: Joi.string().required(),
+            animated: Joi.boolean().optional(),
+            label: Joi.string().optional(),
+          })
+        ).required(),
+      });
 
-  if (!project || !nodes || !edges) {
-    return res.status(400).json({ message: 'Project, nodes and edges are required.' });
-  }
-
-  const projectPath = path.join(PROJECTS_DIR, project);
-  const graphPath = path.join(projectPath, 'graph.json');
-
-  if (!fs.existsSync(projectPath)) {
-    return res.status(404).json({ message: 'Project not found.' });
-  }
-
-  try {
-    const updatedGraph: ProjectGraph = { nodes, edges };
-    fs.writeFileSync(graphPath, JSON.stringify(updatedGraph, null, 2));
-    return res.status(200).json({ message: 'Graph updated successfully.' });
-  } catch (error) {
-    return res.status(500).json({ message: 'Error updating graph.', error });
-  }
-});
-
-/**
- * Execute allowed commands in a project
- */
-app.post('/execute-command', (req: Request, res: Response) => {
-  const { project, command } = req.body;
-
-  if (!project || !command) {
-    return res.status(400).json({ message: 'Project and command are required.' });
-  }
-
-  const projectPath = path.join(PROJECTS_DIR, project);
-
-  if (!fs.existsSync(projectPath)) {
-    return res.status(404).json({ message: 'Project not found.' });
-  }
-
-  // Sécurité : Valider la commande pour éviter l'exécution de commandes dangereuses
-  const allowedCommands = ['ls', 'npm install', 'npm run build', 'npm run start'];
-  if (!allowedCommands.includes(command)) {
-    return res.status(403).json({ message: 'Command not allowed.' });
-  }
-
-  exec(command, { cwd: projectPath }, (error: Error | null, stdout: string, stderr: string) => {
-    if (error) {
-      return res.status(500).json({ message: 'Error executing command.', error: error.message, stderr });
-    }
-    return res.status(200).json({ stdout, stderr });
-  });
-});
-
-/**
- * Endpoint /execute
- */
-app.post('/execute', async (req: Request, res: Response) => {
-  const { project, nodeId } = req.body;
-
-  if (!project || !nodeId) {
-    return res.status(400).json({ message: 'Project and nodeId are required.' });
-  }
-
-  const projectPath = path.join(PROJECTS_DIR, project);
-  const graphPath = path.join(projectPath, 'graph.json');
-
-  if (!fs.existsSync(graphPath)) {
-    return res.status(404).json({ message: 'Project graph not found.' });
-  }
-
-  try {
-    const graph: ProjectGraph = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
-    const compiledCode = compileNodes(graph, nodeId);
-
-    const isolate = new ivm.Isolate({ memoryLimit: 256 });
-    const context = await isolate.createContext();
-
-    console.log("ici 1", { compiledCode });
-
-    const allowedModules = ['lodash', 'moment']; // Liste des modules autorisés
-
-    // Injecter une fonction require limitée (optionnel et à utiliser avec précaution)
-    await context.global.set('require', new ivm.Reference((moduleName: string) => {
-      if (!allowedModules.includes(moduleName)) {
-        throw new Error(`Module "${moduleName}" is not allowed.`);
+      const { error } = schema.validate(projectData);
+      if (error) {
+        logger.error(`Validation error during project import: ${error.details[0].message}`);
+        return res.status(400).json({ message: error.details[0].message });
       }
-      return require(moduleName);
-    }), { copy: true }); // Utiliser copy: false
 
-    let stdout = '';
-    let stderr = '';
+      const { projectName, nodes, edges } = projectData;
 
-    // Configurer console.log et console.error avec copy: false
-    const logRef = new ivm.Reference((...args: any[]) => {
-      stdout += args.map(arg => (typeof arg === 'object' ? JSON.stringify(arg) : String(arg))).join(' ') + '\n';
+      // Vérifier si le projet existe déjà
+      const existingProject = await Project.findOne({ name: projectName });
+      if (existingProject) {
+        logger.warn(`Import project failed: Project "${projectName}" already exists.`);
+        return res.status(400).json({ message: 'Le projet existe déjà.' });
+      }
+
+      // Créer le dossier du projet
+      const projectPath = path.join(__dirname, '..', 'projects', projectName);
+      await fs.mkdir(projectPath, { recursive: true });
+      logger.info(`Project directory created at: ${projectPath}`);
+
+      // Créer les fichiers des nœuds
+      for (const node of nodes) {
+        const filePath = path.join(projectPath, node.data.fileName);
+        await fs.writeFile(filePath, node.data.code);
+        logger.info(`File created for node "${node.id}" at: ${filePath}`);
+      }
+
+      // Initialiser un package.json
+      await fs.writeFile(path.join(projectPath, 'package.json'), JSON.stringify({
+        name: projectName,
+        version: "1.0.0",
+        main: "index.js",
+        scripts: {
+          start: "node index.js"
+        },
+        dependencies: {}
+      }, null, 2));
+      logger.info(`package.json created at: ${path.join(projectPath, 'package.json')}`);
+
+      // Enregistrer le projet dans la base de données
+      const newProject = new Project({
+        name: projectName,
+      });
+
+      const savedProject = await newProject.save();
+      logger.info(`Project "${projectName}" saved to database.`);
+
+      // Enregistrer les nœuds dans la base de données
+      for (const node of nodes) {
+        const newNode = new NodeModel({
+          project: savedProject._id,
+          id: node.id,
+          type: node.type,
+          position: node.position,
+          data: node.data,
+        });
+        await newNode.save();
+        logger.info(`Node "${node.id}" saved to database.`);
+      }
+
+      // Vous pouvez également enregistrer les arêtes si vous avez un modèle pour les arêtes
+
+      res.status(201).json({ message: 'Projet importé avec succès.', project: savedProject });
+    } catch (error: any) {
+      logger.error(`Error during project import: ${error.message}`);
+      res.status(500).json({ message: 'Erreur lors de l\'importation du projet.', error: error.message });
+    }
+  }
+];
+
+
+---------
+/// my-low-code-app/backend/src/controllers/nodeController.ts
+
+import { Request, Response } from 'express';
+import { getFilePath, writeFile } from '../utils/fileUtils';
+import NodeModel from '../models/Node';
+
+export const updateNode = async (req: Request, res: Response) => {
+  console.log('Request received for updating node');
+  const { project, nodeId, nodeData } = req.body;
+
+  // Log the incoming data
+  console.log('Incoming request data:', { project, nodeId, nodeData });
+
+  if (!project || !nodeId || !nodeData) {
+    console.log('Validation failed: Missing project, nodeId, or nodeData');
+    return res.status(400).json({ message: 'Project, nodeId, and nodeData are required.' });
+  }
+
+  try {
+    // Check that all required fields in nodeData are present
+    const requiredFields = ['label', 'fileName', 'code'];
+    for (const field of requiredFields) {
+      if (!nodeData[field]) {
+        console.log(`Validation failed: Field '${field}' is missing in nodeData`);
+        return res.status(400).json({ message: `Field '${field}' is required in nodeData.` });
+      }
+    }
+
+    // Try to find and update the node in the database
+    console.log('Finding node in the database...');
+    const updatedNode = await NodeModel.findOneAndUpdate(
+      { project, id: nodeId },
+      { $set: { data: nodeData } },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedNode) {
+      console.log('Node not found in the database.');
+      return res.status(404).json({ message: 'Node not found.' });
+    }
+
+    console.log('Node successfully updated in the database:', updatedNode);
+
+    // Now write the updated code to the file system
+    const filePath = getFilePath(project, nodeData.fileName);
+    console.log('Resolved file path:', filePath);
+
+    await writeFile(filePath, nodeData.code);
+    console.log(`File successfully written to path: ${filePath}`);
+
+    res.json({ message: 'Node updated successfully.', node: updatedNode });
+  } catch (error) {
+    // Catch and log any errors that occur
+    console.error('Error updating node or writing file:', error);
+    res.status(500).json({ message: 'Error updating node or writing file.', error: error.message });
+  }
+};
+
+
+---------
+/// my-low-code-app/backend/src/controllers/projectController.ts
+
+import { Request, Response } from 'express';
+import { exec } from 'child_process';
+import path from 'path';
+import fs from 'fs';
+import Joi from 'joi';
+import Project from '../models/Project';
+import simpleGit, { SimpleGit } from 'simple-git';
+import logger from '../utils/logger';
+
+// Initialiser simple-git avec l'option de journalisation
+const git: SimpleGit = simpleGit();
+
+/**
+ * Crée un nouveau projet.
+ * @param req - Requête Express contenant projectCode, projectName et gitRepo dans le corps.
+ * @param res - Réponse Express.
+ */
+export const createProject = async (req: Request, res: Response) => {
+  const schema = Joi.object({
+    projectCode: Joi.string().required(),
+    projectName: Joi.string().alphanum().min(3).max(30).required(),
+    gitRepo: Joi.string().uri().optional(), // Ajouter un champ pour l'URL du dépôt Git
+  });
+
+  const { error } = schema.validate(req.body);
+  if (error) {
+    logger.error(`Validation error: ${error.details[0].message}`);
+    return res.status(400).json({ message: error.details[0].message });
+  }
+
+  const { projectCode, projectName, gitRepo } = req.body;
+
+  try {
+    // Vérifier si le projet existe déjà
+    const existingProject = await Project.findOne({ name: projectName });
+    if (existingProject) {
+      logger.warn(`Project creation failed: Project "${projectName}" already exists.`);
+      return res.status(400).json({ message: 'Le projet existe déjà.' });
+    }
+
+    // Créer le dossier du projet
+    const projectPath = path.join(__dirname, '..', 'projects', projectName);
+    if (!fs.existsSync(projectPath)) {
+      fs.mkdirSync(projectPath, { recursive: true });
+      logger.info(`Project directory created at: ${projectPath}`);
+    }
+
+    // Initialiser Git si un dépôt Git est fourni
+    if (gitRepo) {
+      try {
+        await git.clone(gitRepo, projectPath);
+        logger.info(`Git repository cloned from ${gitRepo} into ${projectPath}`);
+      } catch (gitError: any) {
+        logger.error(`Failed to clone Git repository: ${gitError.message}`);
+        return res.status(500).json({ message: 'Erreur lors du clonage du dépôt Git.', error: gitError.message });
+      }
+    }
+
+    // Créer le fichier principal (par exemple, index.ts)
+    const mainFilePath = path.join(projectPath, 'index.ts');
+    fs.writeFileSync(mainFilePath, projectCode);
+    logger.info(`Main file created at: ${mainFilePath}`);
+
+    // Initialiser un package.json
+    exec('npm init -y', { cwd: projectPath }, async (err, stdout, stderr) => {
+      if (err) {
+        logger.error(`Error initializing npm: ${err.message}`);
+        return res.status(500).json({ message: 'Erreur lors de l\'initialisation du projet.' });
+      }
+
+      logger.info(`npm initialized for project "${projectName}".`);
+
+      try {
+        // Enregistrer le projet dans la base de données
+        const newProject = new Project({
+          name: projectName,
+        });
+
+        const savedProject = await newProject.save();
+        logger.info(`Project "${projectName}" saved to database.`);
+
+        res.status(201).json({ message: 'Projet créé avec succès.', project: savedProject });
+      } catch (saveError: any) {
+        logger.error(`Error saving project to database: ${saveError.message}`);
+        res.status(500).json({ message: 'Erreur lors de la création du projet.', error: saveError.message });
+      }
     });
-    const errorRef = new ivm.Reference((...args: any[]) => {
-      stderr += args.map(arg => (typeof arg === 'object' ? JSON.stringify(arg) : String(arg))).join(' ') + '\n';
-    });
 
-    await context.global.set('console', {
-      log: logRef,
-      error: errorRef,
-    }, { copy: true }); // Changement ici: copy: false
+  } catch (error: any) {
+    logger.error(`Error creating project: ${error.message}`);
+    res.status(500).json({ message: 'Erreur lors de la création du projet.', error: error.message });
+  }
+};
 
-    // Envelopper le code dans une IIFE async pour gérer les promesses
-    const wrappedCode = `
-      (async () => {
-        try {
-          ${compiledCode}
-          return { success: true, result: "Execution completed successfully" };
-        } catch (error) {
-          console.error(error.toString());
-          return { success: false, error: error.toString() };
-        }
-      })()
-    `;
+/**
+ * Récupère la liste des projets.
+ * @param req - Requête Express.
+ * @param res - Réponse Express.
+ */
+export const getProjects = async (req: Request, res: Response) => {
+  try {
+    const projects = await Project.find().select('name createdAt');
+    logger.info('Fetched list of projects.');
+    res.json(projects);
+  } catch (error: any) {
+    logger.error(`Error fetching projects: ${error.message}`);
+    res.status(500).json({ message: 'Erreur lors de la récupération des projets.', error: error.message });
+  }
+};
 
-    // Log du code compilé pour débogage
-    console.log('Compiled Code:', compiledCode);
-    console.log('Wrapped Code:', wrappedCode);
+/**
+ * Installe un package npm dans un projet spécifique.
+ * @param req - Requête Express contenant project et packageName dans le corps.
+ * @param res - Réponse Express.
+ */
+export const installPackage = async (req: Request, res: Response) => {
+  const schema = Joi.object({
+    project: Joi.string().required(),
+    packageName: Joi.string().required(),
+  });
 
-    // Compiler et exécuter le script
-    const script = await isolate.compileScript(wrappedCode);
-    const rawResult = await script.run(context, { timeout: 5000 });
+  const { error } = schema.validate(req.body);
+  if (error) {
+    logger.error(`Validation error: ${error.details[0].message}`);
+    return res.status(400).json({ message: error.details[0].message });
+  }
 
-    // Copier le résultat de l'exécution
-    const result = await rawResult.copy();
+  const { project, packageName } = req.body;
 
-    // Nettoyage de l'environnement isolé
-    context.release();
-    isolate.dispose();
+  try {
+    // Trouver le projet dans la base de données
+    const existingProject = await Project.findOne({ name: project });
+    if (!existingProject) {
+      logger.warn(`Install package failed: Project "${project}" not found.`);
+      return res.status(404).json({ message: 'Projet non trouvé.' });
+    }
 
-    return res.status(200).json({
-      result: result.success ? result.result : result.error,
-      stdout,
-      stderr,
+    const projectPath = path.join(__dirname, '..', 'projects', project);
+
+    // Vérifier si le dossier du projet existe
+    if (!fs.existsSync(projectPath)) {
+      logger.error(`Project directory does not exist: ${projectPath}`);
+      return res.status(400).json({ message: 'Le dossier du projet n\'existe pas.' });
+    }
+
+    logger.info(`Installing package "${packageName}" in project "${project}".`);
+
+    // Exécuter la commande npm install
+    exec(`npm install ${packageName}`, { cwd: projectPath }, (error, stdout, stderr) => {
+      if (error) {
+        logger.error(`Error installing package: ${error.message}`);
+        return res.status(500).json({ message: 'Erreur lors de l\'installation du package.', stderr: stderr });
+      }
+
+      if (stderr) {
+        logger.warn(`npm stderr: ${stderr}`);
+        // Vous pouvez choisir d'envoyer stderr comme partie de la réponse
+      }
+
+      logger.info(`npm stdout: ${stdout}`);
+      res.json({ message: `Package "${packageName}" installé avec succès.`, stdout, stderr });
     });
   } catch (error: any) {
-    console.error('Execution error:', error);
-    return res.status(500).json({
-      message: 'Error compiling or executing code.',
-      error: error.message,
-      stack: error.stack,
+    logger.error(`Error installing package: ${error.message}`);
+    res.status(500).json({ message: 'Erreur lors de l\'installation du package.', error: error.message });
+  }
+};
+
+
+---------
+/// my-low-code-app/backend/src/middleware/auth.ts
+
+// backend/src/middleware/auth.ts
+
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import logger from '../utils/logger';
+
+const SECRET_KEY = process.env.JWT_SECRET || 'your-secret-key'; // Assurez-vous de définir JWT_SECRET dans votre fichier .env
+
+interface JwtPayload {
+  userId: string;
+  // Ajoutez d'autres propriétés si nécessaire
+}
+
+// Extension de l'interface Request pour inclure user
+declare module 'express-serve-static-core' {
+  interface Request {
+    user?: JwtPayload;
+  }
+}
+
+export const authenticateJWT = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+
+  if (authHeader) {
+    // Le format attendu est "Bearer <token>"
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(token, SECRET_KEY, (err, payload) => {
+      if (err) {
+        logger.warn('Invalid JWT token');
+        return res.sendStatus(403); // Forbidden
+      }
+
+      // Vous pouvez ajouter le payload à la requête pour une utilisation future
+      req.user = payload as JwtPayload;
+      next();
     });
+  } else {
+    logger.warn('No Authorization header provided');
+    res.sendStatus(401); // Unauthorized
+  }
+};
+
+
+---------
+/// my-low-code-app/backend/src/middleware/errorHandler.ts
+
+import { Request, Response, NextFunction } from 'express';
+import logger from '../utils/logger';
+
+export const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
+  logger.error(`Unhandled Error: ${err.message}`);
+  res.status(500).json({ message: 'Internal Server Error', error: err.message });
+};
+
+
+---------
+/// my-low-code-app/backend/src/models/Edge.ts
+
+import mongoose, { Document, Schema } from 'mongoose';
+
+export interface IEdge extends Document {
+  project: mongoose.Types.ObjectId;
+  id: string;
+  source: string;
+  target: string;
+  animated?: boolean;
+  label?: string;
+  style?: Record<string, any>;
+}
+
+const EdgeSchema: Schema = new Schema({
+  project: { type: Schema.Types.ObjectId, ref: 'Project', required: true },
+  id: { type: String, required: true },
+  source: { type: String, required: true },
+  target: { type: String, required: true },
+  animated: { type: Boolean, default: false },
+  label: { type: String },
+  style: { type: Schema.Types.Mixed },
+});
+
+// Index composé pour assurer l'unicité de l'ID par projet
+EdgeSchema.index({ project: 1, id: 1 }, { unique: true });
+
+export default mongoose.model<IEdge>('Edge', EdgeSchema);
+
+
+---------
+/// my-low-code-app/backend/src/models/Node.ts
+
+import mongoose, { Document, Schema } from 'mongoose';
+
+export interface INodeData {
+  label: string;
+  fileName: string;
+  imports: string[];
+  code: string;
+  exportedFunctions: string[];
+  lintErrors?: any[];
+}
+
+export interface INode extends Document {
+  project: mongoose.Types.ObjectId;
+  id: string;
+  type: string;
+  position: {
+    x: number;
+    y: number;
+  };
+  data: INodeData;
+}
+
+const NodeSchema: Schema = new Schema({
+  project: { type: Schema.Types.ObjectId, ref: 'Project', required: true },
+  id: { type: String, required: true },
+  type: { type: String, required: true },
+  position: {
+    x: { type: Number, required: true, default: 0 },
+    y: { type: Number, required: true, default: 0 },
+  },
+  data: {
+    label: { type: String, required: true, default: 'Unnamed Node' },
+    fileName: { type: String, required: true, default: 'UnnamedFile.js' },
+    imports: { type: [String], default: [] },
+    code: { type: String, required: true, default: '// No code provided' },
+    exportedFunctions: { type: [String], default: [] },
+    lintErrors: { type: [Schema.Types.Mixed], default: [] },
+  },
+});
+
+export default mongoose.model<INode>('Node', NodeSchema);
+
+
+---------
+/// my-low-code-app/backend/src/models/Project.ts
+
+import mongoose, { Document, Schema } from 'mongoose';
+
+export interface IProject extends Document {
+  name: string;
+  createdAt: Date;
+}
+
+const ProjectSchema: Schema = new Schema({
+  name: { type: String, required: true, unique: true },
+  createdAt: { type: Date, default: Date.now },
+});
+
+export default mongoose.model<IProject>('Project', ProjectSchema);
+
+
+---------
+/// my-low-code-app/backend/src/models/User.ts
+
+import mongoose, { Document, Schema } from 'mongoose';
+import bcrypt from 'bcrypt';
+
+export interface IUser extends Document {
+  username: string;
+  password: string;
+  comparePassword: (candidatePassword: string) => Promise<boolean>;
+}
+
+const UserSchema: Schema = new Schema({
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+});
+
+// Middleware pour hacher le mot de passe avant de sauvegarder
+UserSchema.pre<IUser>('save', async function(next) {
+  if (!this.isModified('password')) return next();
+
+  try {
+    const salt = await bcrypt.genSalt(10);
+    const hashed = await bcrypt.hash(this.password, salt);
+    this.password = hashed;
+    next();
+  } catch (err) {
+    next(err as any);
   }
 });
 
-// Démarrer le serveur
-app.listen(PORT, () => {
-  console.log(`Backend server running on http://localhost:${PORT}`);
-});
+// Méthode pour comparer les mots de passe
+UserSchema.methods.comparePassword = function(candidatePassword: string): Promise<boolean> {
+  return bcrypt.compare(candidatePassword, this.password);
+};
+
+export default mongoose.model<IUser>('User', UserSchema);
+
+
+---------
+/// my-low-code-app/backend/src/projects/cheik/index.ts
+
+test
+
+---------
+/// my-low-code-app/backend/src/projects/nouveautest/index.ts
+
+naruto
+
+---------
+/// my-low-code-app/backend/src/projects/test/index.ts
+
+test
+
+---------
+/// my-low-code-app/backend/src/projects/test/node_modules/axios/index.d.ts
+
+// TypeScript Version: 4.7
+export type AxiosHeaderValue = AxiosHeaders | string | string[] | number | boolean | null;
+
+interface RawAxiosHeaders {
+  [key: string]: AxiosHeaderValue;
+}
+
+type MethodsHeaders = Partial<{
+  [Key in Method as Lowercase<Key>]: AxiosHeaders;
+} & {common: AxiosHeaders}>;
+
+type AxiosHeaderMatcher = string | RegExp | ((this: AxiosHeaders, value: string, name: string) => boolean);
+
+type AxiosHeaderParser = (this: AxiosHeaders, value: AxiosHeaderValue, header: string) => any;
+
+export class AxiosHeaders {
+  constructor(
+      headers?: RawAxiosHeaders | AxiosHeaders | string
+  );
+
+  [key: string]: any;
+
+  set(headerName?: string, value?: AxiosHeaderValue, rewrite?: boolean | AxiosHeaderMatcher): AxiosHeaders;
+  set(headers?: RawAxiosHeaders | AxiosHeaders | string, rewrite?: boolean): AxiosHeaders;
+
+  get(headerName: string, parser: RegExp): RegExpExecArray | null;
+  get(headerName: string, matcher?: true | AxiosHeaderParser): AxiosHeaderValue;
+
+  has(header: string, matcher?: AxiosHeaderMatcher): boolean;
+
+  delete(header: string | string[], matcher?: AxiosHeaderMatcher): boolean;
+
+  clear(matcher?: AxiosHeaderMatcher): boolean;
+
+  normalize(format: boolean): AxiosHeaders;
+
+  concat(...targets: Array<AxiosHeaders | RawAxiosHeaders | string | undefined | null>): AxiosHeaders;
+
+  toJSON(asStrings?: boolean): RawAxiosHeaders;
+
+  static from(thing?: AxiosHeaders | RawAxiosHeaders | string): AxiosHeaders;
+
+  static accessor(header: string | string[]): AxiosHeaders;
+
+  static concat(...targets: Array<AxiosHeaders | RawAxiosHeaders | string | undefined | null>): AxiosHeaders;
+
+  setContentType(value: ContentType, rewrite?: boolean | AxiosHeaderMatcher): AxiosHeaders;
+  getContentType(parser?: RegExp): RegExpExecArray | null;
+  getContentType(matcher?: AxiosHeaderMatcher): AxiosHeaderValue;
+  hasContentType(matcher?: AxiosHeaderMatcher): boolean;
+
+  setContentLength(value: AxiosHeaderValue, rewrite?: boolean | AxiosHeaderMatcher): AxiosHeaders;
+  getContentLength(parser?: RegExp): RegExpExecArray | null;
+  getContentLength(matcher?: AxiosHeaderMatcher): AxiosHeaderValue;
+  hasContentLength(matcher?: AxiosHeaderMatcher): boolean;
+
+  setAccept(value: AxiosHeaderValue, rewrite?: boolean | AxiosHeaderMatcher): AxiosHeaders;
+  getAccept(parser?: RegExp): RegExpExecArray | null;
+  getAccept(matcher?: AxiosHeaderMatcher): AxiosHeaderValue;
+  hasAccept(matcher?: AxiosHeaderMatcher): boolean;
+
+  setUserAgent(value: AxiosHeaderValue, rewrite?: boolean | AxiosHeaderMatcher): AxiosHeaders;
+  getUserAgent(parser?: RegExp): RegExpExecArray | null;
+  getUserAgent(matcher?: AxiosHeaderMatcher): AxiosHeaderValue;
+  hasUserAgent(matcher?: AxiosHeaderMatcher): boolean;
+
+  setContentEncoding(value: AxiosHeaderValue, rewrite?: boolean | AxiosHeaderMatcher): AxiosHeaders;
+  getContentEncoding(parser?: RegExp): RegExpExecArray | null;
+  getContentEncoding(matcher?: AxiosHeaderMatcher): AxiosHeaderValue;
+  hasContentEncoding(matcher?: AxiosHeaderMatcher): boolean;
+
+  setAuthorization(value: AxiosHeaderValue, rewrite?: boolean | AxiosHeaderMatcher): AxiosHeaders;
+  getAuthorization(parser?: RegExp): RegExpExecArray | null;
+  getAuthorization(matcher?: AxiosHeaderMatcher): AxiosHeaderValue;
+  hasAuthorization(matcher?: AxiosHeaderMatcher): boolean;
+
+  [Symbol.iterator](): IterableIterator<[string, AxiosHeaderValue]>;
+}
+
+type CommonRequestHeadersList = 'Accept' | 'Content-Length' | 'User-Agent' | 'Content-Encoding' | 'Authorization';
+
+type ContentType = AxiosHeaderValue | 'text/html' | 'text/plain' | 'multipart/form-data' | 'application/json' | 'application/x-www-form-urlencoded' | 'application/octet-stream';
+
+export type RawAxiosRequestHeaders = Partial<RawAxiosHeaders & {
+  [Key in CommonRequestHeadersList]: AxiosHeaderValue;
+} & {
+  'Content-Type': ContentType
+}>;
+
+export type AxiosRequestHeaders = RawAxiosRequestHeaders & AxiosHeaders;
+
+type CommonResponseHeadersList = 'Server' | 'Content-Type' | 'Content-Length' | 'Cache-Control'| 'Content-Encoding';
+
+type RawCommonResponseHeaders = {
+  [Key in CommonResponseHeadersList]: AxiosHeaderValue;
+} & {
+  "set-cookie": string[];
+};
+
+export type RawAxiosResponseHeaders = Partial<RawAxiosHeaders & RawCommonResponseHeaders>;
+
+export type AxiosResponseHeaders = RawAxiosResponseHeaders & AxiosHeaders;
+
+export interface AxiosRequestTransformer {
+  (this: InternalAxiosRequestConfig, data: any, headers: AxiosRequestHeaders): any;
+}
+
+export interface AxiosResponseTransformer {
+  (this: InternalAxiosRequestConfig, data: any, headers: AxiosResponseHeaders, status?: number): any;
+}
+
+export interface AxiosAdapter {
+  (config: InternalAxiosRequestConfig): AxiosPromise;
+}
+
+export interface AxiosBasicCredentials {
+  username: string;
+  password: string;
+}
+
+export interface AxiosProxyConfig {
+  host: string;
+  port: number;
+  auth?: AxiosBasicCredentials;
+  protocol?: string;
+}
+
+export enum HttpStatusCode {
+  Continue = 100,
+  SwitchingProtocols = 101,
+  Processing = 102,
+  EarlyHints = 103,
+  Ok = 200,
+  Created = 201,
+  Accepted = 202,
+  NonAuthoritativeInformation = 203,
+  NoContent = 204,
+  ResetContent = 205,
+  PartialContent = 206,
+  MultiStatus = 207,
+  AlreadyReported = 208,
+  ImUsed = 226,
+  MultipleChoices = 300,
+  MovedPermanently = 301,
+  Found = 302,
+  SeeOther = 303,
+  NotModified = 304,
+  UseProxy = 305,
+  Unused = 306,
+  TemporaryRedirect = 307,
+  PermanentRedirect = 308,
+  BadRequest = 400,
+  Unauthorized = 401,
+  PaymentRequired = 402,
+  Forbidden = 403,
+  NotFound = 404,
+  MethodNotAllowed = 405,
+  NotAcceptable = 406,
+  ProxyAuthenticationRequired = 407,
+  RequestTimeout = 408,
+  Conflict = 409,
+  Gone = 410,
+  LengthRequired = 411,
+  PreconditionFailed = 412,
+  PayloadTooLarge = 413,
+  UriTooLong = 414,
+  UnsupportedMediaType = 415,
+  RangeNotSatisfiable = 416,
+  ExpectationFailed = 417,
+  ImATeapot = 418,
+  MisdirectedRequest = 421,
+  UnprocessableEntity = 422,
+  Locked = 423,
+  FailedDependency = 424,
+  TooEarly = 425,
+  UpgradeRequired = 426,
+  PreconditionRequired = 428,
+  TooManyRequests = 429,
+  RequestHeaderFieldsTooLarge = 431,
+  UnavailableForLegalReasons = 451,
+  InternalServerError = 500,
+  NotImplemented = 501,
+  BadGateway = 502,
+  ServiceUnavailable = 503,
+  GatewayTimeout = 504,
+  HttpVersionNotSupported = 505,
+  VariantAlsoNegotiates = 506,
+  InsufficientStorage = 507,
+  LoopDetected = 508,
+  NotExtended = 510,
+  NetworkAuthenticationRequired = 511,
+}
+
+export type Method =
+    | 'get' | 'GET'
+    | 'delete' | 'DELETE'
+    | 'head' | 'HEAD'
+    | 'options' | 'OPTIONS'
+    | 'post' | 'POST'
+    | 'put' | 'PUT'
+    | 'patch' | 'PATCH'
+    | 'purge' | 'PURGE'
+    | 'link' | 'LINK'
+    | 'unlink' | 'UNLINK';
+
+export type ResponseType =
+    | 'arraybuffer'
+    | 'blob'
+    | 'document'
+    | 'json'
+    | 'text'
+    | 'stream'
+    | 'formdata';
+
+export type responseEncoding =
+    | 'ascii' | 'ASCII'
+    | 'ansi' | 'ANSI'
+    | 'binary' | 'BINARY'
+    | 'base64' | 'BASE64'
+    | 'base64url' | 'BASE64URL'
+    | 'hex' | 'HEX'
+    | 'latin1' | 'LATIN1'
+    | 'ucs-2' | 'UCS-2'
+    | 'ucs2' | 'UCS2'
+    | 'utf-8' | 'UTF-8'
+    | 'utf8' | 'UTF8'
+    | 'utf16le' | 'UTF16LE';
+
+export interface TransitionalOptions {
+  silentJSONParsing?: boolean;
+  forcedJSONParsing?: boolean;
+  clarifyTimeoutError?: boolean;
+}
+
+export interface GenericAbortSignal {
+  readonly aborted: boolean;
+  onabort?: ((...args: any) => any) | null;
+  addEventListener?: (...args: any) => any;
+  removeEventListener?: (...args: any) => any;
+}
+
+export interface FormDataVisitorHelpers {
+  defaultVisitor: SerializerVisitor;
+  convertValue: (value: any) => any;
+  isVisitable: (value: any) => boolean;
+}
+
+export interface SerializerVisitor {
+  (
+      this: GenericFormData,
+      value: any,
+      key: string | number,
+      path: null | Array<string | number>,
+      helpers: FormDataVisitorHelpers
+  ): boolean;
+}
+
+export interface SerializerOptions {
+  visitor?: SerializerVisitor;
+  dots?: boolean;
+  metaTokens?: boolean;
+  indexes?: boolean | null;
+}
+
+// tslint:disable-next-line
+export interface FormSerializerOptions extends SerializerOptions {
+}
+
+export interface ParamEncoder {
+  (value: any, defaultEncoder: (value: any) => any): any;
+}
+
+export interface CustomParamsSerializer {
+  (params: Record<string, any>, options?: ParamsSerializerOptions): string;
+}
+
+export interface ParamsSerializerOptions extends SerializerOptions {
+  encode?: ParamEncoder;
+  serialize?: CustomParamsSerializer;
+}
+
+type MaxUploadRate = number;
+
+type MaxDownloadRate = number;
+
+type BrowserProgressEvent = any;
+
+export interface AxiosProgressEvent {
+  loaded: number;
+  total?: number;
+  progress?: number;
+  bytes: number;
+  rate?: number;
+  estimated?: number;
+  upload?: boolean;
+  download?: boolean;
+  event?: BrowserProgressEvent;
+  lengthComputable: boolean;
+}
+
+type Milliseconds = number;
+
+type AxiosAdapterName = 'fetch' | 'xhr' | 'http' | string;
+
+type AxiosAdapterConfig = AxiosAdapter | AxiosAdapterName;
+
+export type AddressFamily = 4 | 6 | undefined;
+
+export interface LookupAddressEntry {
+  address: string;
+  family?: AddressFamily;
+}
+
+export type LookupAddress = string | LookupAddressEntry;
+
+export interface AxiosRequestConfig<D = any> {
+  url?: string;
+  method?: Method | string;
+  baseURL?: string;
+  transformRequest?: AxiosRequestTransformer | AxiosRequestTransformer[];
+  transformResponse?: AxiosResponseTransformer | AxiosResponseTransformer[];
+  headers?: (RawAxiosRequestHeaders & MethodsHeaders) | AxiosHeaders;
+  params?: any;
+  paramsSerializer?: ParamsSerializerOptions | CustomParamsSerializer;
+  data?: D;
+  timeout?: Milliseconds;
+  timeoutErrorMessage?: string;
+  withCredentials?: boolean;
+  adapter?: AxiosAdapterConfig | AxiosAdapterConfig[];
+  auth?: AxiosBasicCredentials;
+  responseType?: ResponseType;
+  responseEncoding?: responseEncoding | string;
+  xsrfCookieName?: string;
+  xsrfHeaderName?: string;
+  onUploadProgress?: (progressEvent: AxiosProgressEvent) => void;
+  onDownloadProgress?: (progressEvent: AxiosProgressEvent) => void;
+  maxContentLength?: number;
+  validateStatus?: ((status: number) => boolean) | null;
+  maxBodyLength?: number;
+  maxRedirects?: number;
+  maxRate?: number | [MaxUploadRate, MaxDownloadRate];
+  beforeRedirect?: (options: Record<string, any>, responseDetails: {headers: Record<string, string>, statusCode: HttpStatusCode}) => void;
+  socketPath?: string | null;
+  transport?: any;
+  httpAgent?: any;
+  httpsAgent?: any;
+  proxy?: AxiosProxyConfig | false;
+  cancelToken?: CancelToken;
+  decompress?: boolean;
+  transitional?: TransitionalOptions;
+  signal?: GenericAbortSignal;
+  insecureHTTPParser?: boolean;
+  env?: {
+    FormData?: new (...args: any[]) => object;
+  };
+  formSerializer?: FormSerializerOptions;
+  family?: AddressFamily;
+  lookup?: ((hostname: string, options: object, cb: (err: Error | null, address: LookupAddress | LookupAddress[], family?: AddressFamily) => void) => void) |
+      ((hostname: string, options: object) => Promise<[address: LookupAddressEntry | LookupAddressEntry[], family?: AddressFamily] | LookupAddress>);
+  withXSRFToken?: boolean | ((config: InternalAxiosRequestConfig) => boolean | undefined);
+  fetchOptions?: Record<string, any>;
+}
+
+// Alias
+export type RawAxiosRequestConfig<D = any> = AxiosRequestConfig<D>;
+
+export interface InternalAxiosRequestConfig<D = any> extends AxiosRequestConfig<D> {
+  headers: AxiosRequestHeaders;
+}
+
+export interface HeadersDefaults {
+  common: RawAxiosRequestHeaders;
+  delete: RawAxiosRequestHeaders;
+  get: RawAxiosRequestHeaders;
+  head: RawAxiosRequestHeaders;
+  post: RawAxiosRequestHeaders;
+  put: RawAxiosRequestHeaders;
+  patch: RawAxiosRequestHeaders;
+  options?: RawAxiosRequestHeaders;
+  purge?: RawAxiosRequestHeaders;
+  link?: RawAxiosRequestHeaders;
+  unlink?: RawAxiosRequestHeaders;
+}
+
+export interface AxiosDefaults<D = any> extends Omit<AxiosRequestConfig<D>, 'headers'> {
+  headers: HeadersDefaults;
+}
+
+export interface CreateAxiosDefaults<D = any> extends Omit<AxiosRequestConfig<D>, 'headers'> {
+  headers?: RawAxiosRequestHeaders | AxiosHeaders | Partial<HeadersDefaults>;
+}
+
+export interface AxiosResponse<T = any, D = any> {
+  data: T;
+  status: number;
+  statusText: string;
+  headers: RawAxiosResponseHeaders | AxiosResponseHeaders;
+  config: InternalAxiosRequestConfig<D>;
+  request?: any;
+}
+
+export class AxiosError<T = unknown, D = any> extends Error {
+  constructor(
+      message?: string,
+      code?: string,
+      config?: InternalAxiosRequestConfig<D>,
+      request?: any,
+      response?: AxiosResponse<T, D>
+  );
+
+  config?: InternalAxiosRequestConfig<D>;
+  code?: string;
+  request?: any;
+  response?: AxiosResponse<T, D>;
+  isAxiosError: boolean;
+  status?: number;
+  toJSON: () => object;
+  cause?: Error;
+  static from<T = unknown, D = any>(
+    error: Error | unknown,
+    code?: string,
+    config?: InternalAxiosRequestConfig<D>,
+    request?: any,
+    response?: AxiosResponse<T, D>,
+    customProps?: object,
+): AxiosError<T, D>;
+  static readonly ERR_FR_TOO_MANY_REDIRECTS = "ERR_FR_TOO_MANY_REDIRECTS";
+  static readonly ERR_BAD_OPTION_VALUE = "ERR_BAD_OPTION_VALUE";
+  static readonly ERR_BAD_OPTION = "ERR_BAD_OPTION";
+  static readonly ERR_NETWORK = "ERR_NETWORK";
+  static readonly ERR_DEPRECATED = "ERR_DEPRECATED";
+  static readonly ERR_BAD_RESPONSE = "ERR_BAD_RESPONSE";
+  static readonly ERR_BAD_REQUEST = "ERR_BAD_REQUEST";
+  static readonly ERR_NOT_SUPPORT = "ERR_NOT_SUPPORT";
+  static readonly ERR_INVALID_URL = "ERR_INVALID_URL";
+  static readonly ERR_CANCELED = "ERR_CANCELED";
+  static readonly ECONNABORTED = "ECONNABORTED";
+  static readonly ETIMEDOUT = "ETIMEDOUT";
+}
+
+export class CanceledError<T> extends AxiosError<T> {
+}
+
+export type AxiosPromise<T = any> = Promise<AxiosResponse<T>>;
+
+export interface CancelStatic {
+  new (message?: string): Cancel;
+}
+
+export interface Cancel {
+  message: string | undefined;
+}
+
+export interface Canceler {
+  (message?: string, config?: AxiosRequestConfig, request?: any): void;
+}
+
+export interface CancelTokenStatic {
+  new (executor: (cancel: Canceler) => void): CancelToken;
+  source(): CancelTokenSource;
+}
+
+export interface CancelToken {
+  promise: Promise<Cancel>;
+  reason?: Cancel;
+  throwIfRequested(): void;
+}
+
+export interface CancelTokenSource {
+  token: CancelToken;
+  cancel: Canceler;
+}
+
+export interface AxiosInterceptorOptions {
+  synchronous?: boolean;
+  runWhen?: (config: InternalAxiosRequestConfig) => boolean;
+}
+
+export interface AxiosInterceptorManager<V> {
+  use(onFulfilled?: ((value: V) => V | Promise<V>) | null, onRejected?: ((error: any) => any) | null, options?: AxiosInterceptorOptions): number;
+  eject(id: number): void;
+  clear(): void;
+}
+
+export class Axios {
+  constructor(config?: AxiosRequestConfig);
+  defaults: AxiosDefaults;
+  interceptors: {
+    request: AxiosInterceptorManager<InternalAxiosRequestConfig>;
+    response: AxiosInterceptorManager<AxiosResponse>;
+  };
+  getUri(config?: AxiosRequestConfig): string;
+  request<T = any, R = AxiosResponse<T>, D = any>(config: AxiosRequestConfig<D>): Promise<R>;
+  get<T = any, R = AxiosResponse<T>, D = any>(url: string, config?: AxiosRequestConfig<D>): Promise<R>;
+  delete<T = any, R = AxiosResponse<T>, D = any>(url: string, config?: AxiosRequestConfig<D>): Promise<R>;
+  head<T = any, R = AxiosResponse<T>, D = any>(url: string, config?: AxiosRequestConfig<D>): Promise<R>;
+  options<T = any, R = AxiosResponse<T>, D = any>(url: string, config?: AxiosRequestConfig<D>): Promise<R>;
+  post<T = any, R = AxiosResponse<T>, D = any>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<R>;
+  put<T = any, R = AxiosResponse<T>, D = any>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<R>;
+  patch<T = any, R = AxiosResponse<T>, D = any>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<R>;
+  postForm<T = any, R = AxiosResponse<T>, D = any>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<R>;
+  putForm<T = any, R = AxiosResponse<T>, D = any>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<R>;
+  patchForm<T = any, R = AxiosResponse<T>, D = any>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<R>;
+}
+
+export interface AxiosInstance extends Axios {
+  <T = any, R = AxiosResponse<T>, D = any>(config: AxiosRequestConfig<D>): Promise<R>;
+  <T = any, R = AxiosResponse<T>, D = any>(url: string, config?: AxiosRequestConfig<D>): Promise<R>;
+
+  defaults: Omit<AxiosDefaults, 'headers'> & {
+    headers: HeadersDefaults & {
+      [key: string]: AxiosHeaderValue
+    }
+  };
+}
+
+export interface GenericFormData {
+  append(name: string, value: any, options?: any): any;
+}
+
+export interface GenericHTMLFormElement {
+  name: string;
+  method: string;
+  submit(): void;
+}
+
+export function getAdapter(adapters: AxiosAdapterConfig | AxiosAdapterConfig[] | undefined): AxiosAdapter;
+
+export function toFormData(sourceObj: object, targetFormData?: GenericFormData, options?: FormSerializerOptions): GenericFormData;
+
+export function formToJSON(form: GenericFormData|GenericHTMLFormElement): object;
+
+export function isAxiosError<T = any, D = any>(payload: any): payload is AxiosError<T, D>;
+
+export function spread<T, R>(callback: (...args: T[]) => R): (array: T[]) => R;
+
+export function isCancel(value: any): value is Cancel;
+
+export function all<T>(values: Array<T | Promise<T>>): Promise<T[]>;
+
+export interface AxiosStatic extends AxiosInstance {
+  create(config?: CreateAxiosDefaults): AxiosInstance;
+  Cancel: CancelStatic;
+  CancelToken: CancelTokenStatic;
+  Axios: typeof Axios;
+  AxiosError: typeof AxiosError;
+  HttpStatusCode: typeof HttpStatusCode;
+  readonly VERSION: string;
+  isCancel: typeof isCancel;
+  all: typeof all;
+  spread: typeof spread;
+  isAxiosError: typeof isAxiosError;
+  toFormData: typeof toFormData;
+  formToJSON: typeof formToJSON;
+  getAdapter: typeof getAdapter;
+  CanceledError: typeof CanceledError;
+  AxiosHeaders: typeof AxiosHeaders;
+}
+
+declare const axios: AxiosStatic;
+
+export default axios;
+
+---------
+/// my-low-code-app/backend/src/projects/test/node_modules/form-data/index.d.ts
+
+// Definitions by: Carlos Ballesteros Velasco <https://github.com/soywiz>
+//                 Leon Yu <https://github.com/leonyu>
+//                 BendingBender <https://github.com/BendingBender>
+//                 Maple Miao <https://github.com/mapleeit>
+
+---------
+/// my-low-code-app/backend/src/routes/authRoutes.ts
+
+// backend/src/routes/authRoutes.ts
+
+import express from 'express';
+import { register, login } from '../controllers/authController';
+
+const router = express.Router();
+
+/**
+ * @route POST /auth/register
+ * @desc Inscription d'un nouvel utilisateur
+ * @access Public
+ */
+router.post('/register', register);
+
+/**
+ * @route POST /auth/login
+ * @desc Connexion d'un utilisateur existant
+ * @access Public
+ */
+router.post('/login', login);
+
+export default router;
+
+
+---------
+/// my-low-code-app/backend/src/routes/devServerRoutes.ts
+
+// backend/src/routes/devServerRoutes.ts
+
+import express from 'express';
+import { startDevServer, stopDevServer } from '../controllers/devServerController';
+
+const router = express.Router();
+
+/**
+ * @route POST /dev-server/start
+ * @desc Démarre le serveur de développement pour un projet donné.
+ * @access Public (à sécuriser selon vos besoins)
+ */
+router.post('/start', startDevServer);
+
+/**
+ * @route POST /dev-server/stop
+ * @desc Arrête le serveur de développement en cours.
+ * @access Public (à sécuriser selon vos besoins)
+ */
+router.post('/stop', stopDevServer);
+
+export default router;
+
+
+---------
+/// my-low-code-app/backend/src/routes/executeRoutes.ts
+
+import express from 'express';
+import { executeNode } from '../controllers/executeController';
+
+const router = express.Router();
+
+router.post('/', executeNode);
+
+export default router;
+
+
+---------
+/// my-low-code-app/backend/src/routes/fileRoutes.ts
+
+import express from 'express';
+import { updateFile, getAccessibleFunctions } from '../controllers/fileController';
+
+const router = express.Router();
+
+router.post('/', updateFile);
+router.get('/accessible-functions', getAccessibleFunctions);
+
+export default router;
+
+---------
+/// my-low-code-app/backend/src/routes/gitRoutes.ts
+
+import express from 'express';
+import { commitChanges, pushChanges, pullChanges } from '../controllers/gitController';
+
+const router = express.Router();
+
+router.post('/commit', commitChanges);
+router.post('/push', pushChanges);
+router.post('/pull', pullChanges);
+
+export default router;
+
+
+---------
+/// my-low-code-app/backend/src/routes/graphRoutes.ts
+
+// backend/routes/graphRoutes.ts
+
+import express from 'express';
+import { getProjectGraph, updateGraph, deleteNode, cloneNode } from '../controllers/graphController';
+
+const router = express.Router();
+
+router.get('/', getProjectGraph);
+router.post('/update-graph', updateGraph);
+router.post('/delete-node', deleteNode);
+router.post('/clone-node', cloneNode);
+
+export default router;
+
+---------
+/// my-low-code-app/backend/src/routes/importRoutes.ts
+
+import express from 'express';
+import { importProject } from '../controllers/importController';
+import { authenticateJWT } from '../middleware/auth'; // Si vous avez mis en place l'authentification
+
+const router = express.Router();
+
+/**
+ * @route POST /import
+ * @desc Importe un projet depuis un fichier JSON
+ * @access Protected
+ */
+router.post('/import', authenticateJWT, importProject);
+
+export default router;
+
+
+---------
+/// my-low-code-app/backend/src/routes/projectRoutes.ts
+
+// backend/src/routes/projectRoutes.ts
+
+import express from 'express';
+import { getProjects, createProject, installPackage } from '../controllers/projectController';
+// import { authenticateJWT } from '../middleware/auth'; // Commenter ou supprimer cette ligne
+
+const router = express.Router();
+
+/**
+ * @route GET /projects
+ * @desc Récupère la liste des projets.
+ * @access Public
+ */
+router.get('/', /* authenticateJWT, */ getProjects);
+
+/**
+ * @route POST /projects/create-project
+ * @desc Crée un nouveau projet.
+ * @access Public
+ */
+router.post('/create-project', /* authenticateJWT, */ createProject);
+
+/**
+ * @route POST /projects/install-package
+ * @desc Installe un package npm dans un projet spécifique.
+ * @access Public
+ */
+router.post('/install-package', /* authenticateJWT, */ installPackage);
+
+export default router;
+
+
+---------
+/// my-low-code-app/backend/src/server.ts
+
+// backend/src/server.ts
+
+import express from 'express';
+import cors from 'cors';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import projectRoutes from './routes/projectRoutes';
+import graphRoutes from './routes/graphRoutes';
+import fileRoutes from './routes/fileRoutes';
+import executeRoutes from './routes/executeRoutes';
+import devServerRoutes from './routes/devServerRoutes';
+import gitRoutes from './routes/gitRoutes';
+import importRoutes from './routes/importRoutes';
+import authRoutes from './routes/authRoutes'; // Importer les routes d'authentification
+
+import { errorHandler } from './middleware/errorHandler';
+import logger from './utils/logger';
+
+// Documentation de l'API (par exemple Swagger)
+import swaggerUi from 'swagger-ui-express';
+import swaggerJsdoc from 'swagger-jsdoc';
+
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Routes
+app.use('/auth', authRoutes); // Ajouter les routes d'authentification
+app.use('/projects', projectRoutes);
+app.use('/project-graph', graphRoutes);
+app.use('/update-file', fileRoutes);
+app.use('/execute', executeRoutes);
+app.use('/dev-server', devServerRoutes);
+app.use('/git', gitRoutes);
+app.use('/import', importRoutes);
+
+// Configuration Swagger
+const options = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Low-Code App API',
+      version: '1.0.0',
+    },
+  },
+  apis: ['./src/routes/*.ts'], // Chemin vers vos fichiers de routes
+};
+
+const specs = swaggerJsdoc(options);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+
+// Middleware de gestion des erreurs (doit être placé après toutes les routes)
+app.use(errorHandler);
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/low-code-app')
+  .then(() => {
+    logger.info('Connected to MongoDB');
+    // Démarrer le serveur seulement après la connexion à MongoDB
+    app.listen(PORT, () => {
+      logger.info(`Server is running on port ${PORT}`);
+    });
+  })
+  .catch(err => {
+    logger.error(`MongoDB connection error: ${err.message}`);
+  });
 
 
 ---------
@@ -715,80 +2273,247 @@ export interface ProjectGraph {
   edges: Edge[];
 }
 
+---------
+/// my-low-code-app/backend/src/utils/compileNodes.ts
+
+import { INode } from '../models/Node';
+
+export function compileNodes(nodes: INode[], entryFile: string): string {
+  let compiledCode = '';
+  const visitedNodes = new Set<string>();
+
+  function compileNode(nodeId: string) {
+    if (visitedNodes.has(nodeId)) return;
+    visitedNodes.add(nodeId);
+
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+
+    // Ajouter les imports
+    node.data.imports.forEach((imp: string) => {
+      compiledCode += `${imp}\n`;
+    });
+
+    // Ajouter le code du node dans une closure
+    compiledCode += `
+(function(module, exports) {
+  ${node.data.code}
+})((module = { exports: {} }, exports = module.exports));
+`;
+    // Exporter les fonctions
+    node.data.exportedFunctions.forEach((func: string) => {
+      compiledCode += `module.exports.${func} = ${func};\n`;
+    });
+  }
+
+  // Commencer la compilation à partir du fichier d'entrée
+  compileNode(entryFile);
+
+  return compiledCode;
+}
+
+
+---------
+/// my-low-code-app/backend/src/utils/executeCode.ts
+
+import { exec } from 'child_process';
+import path from 'path';
+
+export const executeCode = (filePath: string, callback: (error: Error | null, result: { stdout: string; stderr: string } | null) => void) => {
+  exec(`node ${filePath}`, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`Execution error: ${error.message}`);
+      return callback(error, null);
+    }
+
+    if (stderr) {
+      console.error(`stderr: ${stderr}`);
+      // Vous pouvez choisir d'envoyer stderr comme partie de la réponse
+    }
+
+    console.log(`stdout: ${stdout}`);
+    callback(null, { stdout, stderr });
+  });
+};
+
+
+---------
+/// my-low-code-app/backend/src/utils/fileUtils.ts
+
+// backend/src/utils/fileUtils.ts
+
+import fs from 'fs/promises';
+import path from 'path';
+import logger from './logger';
+
+/**
+ * Vérifie si un fichier existe.
+ * @param filePath - Chemin du fichier à vérifier.
+ * @returns Promise<boolean> indiquant si le fichier existe.
+ */
+export async function checkFileExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Écrit du contenu dans un fichier.
+ * @param filePath - Chemin du fichier à écrire.
+ * @param content - Contenu à écrire dans le fichier.
+ */
+export async function writeFile(filePath: string, content: string): Promise<void> {
+  logger.info(`Attempting to write file: ${filePath}`);
+  try {
+    await fs.writeFile(filePath, content);
+    logger.info(`File successfully written at ${filePath}`);
+  } catch (error) {
+    logger.error(`Error writing file at ${filePath}: ${(error as Error).message}`);
+    throw error; // Propager l'erreur
+  }
+}
+
+/**
+ * Résout le chemin du fichier pour un projet donné.
+ * @param project - Nom du projet.
+ * @param fileName - Nom du fichier.
+ * @returns Chemin complet du fichier.
+ */
+export function getFilePath(project: string, fileName: string): string {
+  const projectPath = path.join(__dirname, '..', 'projects', project);
+  logger.info(`Building file path for project: ${project}, File name: ${fileName}`);
+  return path.join(projectPath, fileName);
+}
+
+
+---------
+/// my-low-code-app/backend/src/utils/logger.ts
+
+import { createLogger, format, transports } from 'winston';
+
+const logger = createLogger({
+  level: 'info', // Niveau de log (error, warn, info, verbose, debug, silly)
+  format: format.combine(
+    format.timestamp({
+      format: 'YYYY-MM-DD HH:mm:ss'
+    }),
+    format.printf(info => `${info.timestamp} [${info.level.toUpperCase()}]: ${info.message}`)
+  ),
+  transports: [
+    new transports.Console(),
+    new transports.File({ filename: 'logs/error.log', level: 'error' }),
+    new transports.File({ filename: 'logs/combined.log' }),
+  ],
+});
+
+export default logger;
+
 
 ---------
 /// my-low-code-app/backend/src/utils.ts
 
-// backend/src/utils.ts
-
-import { Node, Edge, ProjectGraph } from './types';
+import { Node, Edge } from './types';
 
 /**
- * Sanitize variable names to prevent injection or syntax errors.
- * @param name - The variable name to sanitize.
- * @returns A sanitized variable name.
+ * Function to sanitize variable names.
+ * Replace all invalid characters with underscores.
+ * @param name Variable name to sanitize.
+ * @returns Sanitized variable name.
  */
 function sanitizeVariableName(name: string): string {
   return name.replace(/[^a-zA-Z0-9_$]/g, '_');
 }
 
-/**
- * Compile nodes into a single executable JavaScript code string.
- * @param graph - The project graph containing nodes and edges.
- * @param entryNodeId - The ID of the entry node to start compilation.
- * @returns A string of compiled JavaScript code.
- */
-export function compileNodes(graph: ProjectGraph, entryNodeId: string): string {
+export function compileNodes(nodes: Node[], entryNodeId: string): string {
   let compiledCode = '';
   const visitedNodes = new Set<string>();
 
-  /**
-   * Recursively compile a node and its dependencies.
-   * @param nodeId - The ID of the node to compile.
-   */
   function compileNode(nodeId: string) {
     if (visitedNodes.has(nodeId)) return;
     visitedNodes.add(nodeId);
 
-    const node = graph.nodes.find(n => n.id === nodeId);
+    const node = nodes.find(n => n.id === nodeId);
     if (!node) {
       console.error(`Node with id ${nodeId} not found`);
       return;
     }
 
-    // Ajouter les imports
-    if (node.data.imports && node.data.imports.length > 0) {
-      node.data.imports.forEach((imp: string) => {
-        compiledCode += `${imp}\n`;
-      });
-    }
+    // Add imports
+    node.data.imports.forEach((imp: string) => {
+      compiledCode += `${imp}\n`;
+    });
 
-    // Ajouter le code du nœud
+    // Add node code within a closure
+    const sanitizedFileName = sanitizeVariableName(node.data.fileName);
     compiledCode += `
-    // File: ${node.data.fileName}
-    ${node.data.code}
-    `;
+const ${sanitizedFileName} = (function() {
+  const module = { exports: {} };
+  const exports = module.exports;
+  ${node.data.code}
+  return module.exports;
+})();
+`;
 
-    // Exporter les fonctions vers le scope global
-    if (node.data.exportedFunctions && node.data.exportedFunctions.length > 0) {
-      node.data.exportedFunctions.forEach((func: string) => {
-        const sanitizedFunc = sanitizeVariableName(func);
-        compiledCode += `
-    if (typeof ${sanitizedFunc} === 'function') {
-      globalThis.${sanitizedFunc} = ${sanitizedFunc};
-    }
-    `;
-      });
-    }
-
-    // Compiler les nœuds connectés
-    const connectedEdges = graph.edges.filter(edge => edge.source === nodeId);
-    connectedEdges.forEach(edge => compileNode(edge.target));
+    // Export functions
+    node.data.exportedFunctions.forEach((func: string) => {
+      compiledCode += `if (typeof ${sanitizedFileName}.${func} === 'function') {
+  globalThis.${func} = ${sanitizedFileName}.${func};
+}\n`;
+    });
   }
 
-  // Commencer la compilation à partir du nœud d'entrée
+  // Start compilation from the entry node
   compileNode(entryNodeId);
 
   return compiledCode;
 }
 
+
+ my-low-code-app/frontend/src/App.tsx
+
+// frontend/src/App.tsx
+
+import React from 'react';
+import { Box } from '@chakra-ui/react';
+import { ReactFlowProvider } from 'reactflow';
+import { Sidebar } from './components/Sidebar';
+import { GraphCanvas } from './components/GraphCanvas';
+import { Console } from './components/Console';
+import { Modals } from './components/Modals';
+import { ProjectStructure } from './components/ProjectStructure';
+import { AlertProvider } from './contexts/AlertContext';
+import { ProjectProvider } from './contexts/ProjectContext';
+import { GraphProvider } from './contexts/GraphContext';
+import ErrorBoundary from './components/ErrorBoundary';
+import { ModalProvider } from './contexts/ModalContext';
+
+const App: React.FC = () => {
+  return (
+    <ErrorBoundary>
+      <AlertProvider>
+        <ProjectProvider>
+          <GraphProvider>
+            <ModalProvider>
+              <ReactFlowProvider>
+                <Box display="flex" height="100vh">
+                  <Sidebar />
+                  <GraphCanvas />
+                  <Box display="flex" flexDirection="column" width="40%">
+                    <ProjectStructure />
+                    <Console />
+                  </Box>
+                  <Modals />
+                </Box>
+              </ReactFlowProvider>
+            </ModalProvider>
+          </GraphProvider>
+        </ProjectProvider>
+      </AlertProvider>
+    </ErrorBoundary>
+  );
+};
+
+export default App;

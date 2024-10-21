@@ -1,39 +1,40 @@
-// backend/src/controllers/projectController.ts
-
 import { Request, Response } from 'express';
-import Project from '../models/Project';
 import { exec } from 'child_process';
-import fs from 'fs';
 import path from 'path';
+import fs from 'fs';
 import Joi from 'joi';
+import Project from '../models/Project';
+import simpleGit, { SimpleGit } from 'simple-git';
+import logger from '../utils/logger';
 
-export const getProjects = async (req: Request, res: Response) => {
-  try {
-    const projects = await Project.find().select('name code createdAt');
-    res.json(projects);
-  } catch (error) {
-    console.error('Error fetching projects:', error);
-    res.status(500).json({ message: 'Erreur lors de la récupération des projets.' });
-  }
-};
+// Initialiser simple-git avec l'option de journalisation
+const git: SimpleGit = simpleGit();
 
+/**
+ * Crée un nouveau projet.
+ * @param req - Requête Express contenant projectCode, projectName et gitRepo dans le corps.
+ * @param res - Réponse Express.
+ */
 export const createProject = async (req: Request, res: Response) => {
   const schema = Joi.object({
     projectCode: Joi.string().required(),
     projectName: Joi.string().alphanum().min(3).max(30).required(),
+    gitRepo: Joi.string().uri().optional(), // Ajouter un champ pour l'URL du dépôt Git
   });
 
   const { error } = schema.validate(req.body);
   if (error) {
+    logger.error(`Validation error: ${error.details[0].message}`);
     return res.status(400).json({ message: error.details[0].message });
   }
 
-  const { projectCode, projectName } = req.body;
+  const { projectCode, projectName, gitRepo } = req.body;
 
   try {
     // Vérifier si le projet existe déjà
     const existingProject = await Project.findOne({ name: projectName });
     if (existingProject) {
+      logger.warn(`Project creation failed: Project "${projectName}" already exists.`);
       return res.status(400).json({ message: 'Le projet existe déjà.' });
     }
 
@@ -41,46 +42,77 @@ export const createProject = async (req: Request, res: Response) => {
     const projectPath = path.join(__dirname, '..', 'projects', projectName);
     if (!fs.existsSync(projectPath)) {
       fs.mkdirSync(projectPath, { recursive: true });
-      console.log(`Project directory created at: ${projectPath}`);
+      logger.info(`Project directory created at: ${projectPath}`);
+    }
+
+    // Initialiser Git si un dépôt Git est fourni
+    if (gitRepo) {
+      try {
+        await git.clone(gitRepo, projectPath);
+        logger.info(`Git repository cloned from ${gitRepo} into ${projectPath}`);
+      } catch (gitError: any) {
+        logger.error(`Failed to clone Git repository: ${gitError.message}`);
+        return res.status(500).json({ message: 'Erreur lors du clonage du dépôt Git.', error: gitError.message });
+      }
     }
 
     // Créer le fichier principal (par exemple, index.ts)
     const mainFilePath = path.join(projectPath, 'index.ts');
     fs.writeFileSync(mainFilePath, projectCode);
-    console.log(`Main file created at: ${mainFilePath}`);
+    logger.info(`Main file created at: ${mainFilePath}`);
 
     // Initialiser un package.json
     exec('npm init -y', { cwd: projectPath }, async (err, stdout, stderr) => {
       if (err) {
-        console.error('Error initializing npm:', err);
+        logger.error(`Error initializing npm: ${err.message}`);
         return res.status(500).json({ message: 'Erreur lors de l\'initialisation du projet.' });
       }
 
-      console.log(`npm initialized for project "${projectName}".`);
+      logger.info(`npm initialized for project "${projectName}".`);
 
       try {
         // Enregistrer le projet dans la base de données
         const newProject = new Project({
           name: projectName,
-          code: projectCode,
         });
 
         const savedProject = await newProject.save();
-        console.log(`Project "${projectName}" saved to database.`);
+        logger.info(`Project "${projectName}" saved to database.`);
 
         res.status(201).json({ message: 'Projet créé avec succès.', project: savedProject });
-      } catch (saveError) {
-        console.error('Error saving project:', saveError);
-        res.status(500).json({ message: 'Erreur lors de la création du projet.' });
+      } catch (saveError: any) {
+        logger.error(`Error saving project to database: ${saveError.message}`);
+        res.status(500).json({ message: 'Erreur lors de la création du projet.', error: saveError.message });
       }
     });
 
-  } catch (error) {
-    console.error('Error creating project:', error);
-    res.status(500).json({ message: 'Erreur lors de la création du projet.' });
+  } catch (error: any) {
+    logger.error(`Error creating project: ${error.message}`);
+    res.status(500).json({ message: 'Erreur lors de la création du projet.', error: error.message });
   }
 };
 
+/**
+ * Récupère la liste des projets.
+ * @param req - Requête Express.
+ * @param res - Réponse Express.
+ */
+export const getProjects = async (req: Request, res: Response) => {
+  try {
+    const projects = await Project.find().select('name createdAt');
+    logger.info('Fetched list of projects.');
+    res.json(projects);
+  } catch (error: any) {
+    logger.error(`Error fetching projects: ${error.message}`);
+    res.status(500).json({ message: 'Erreur lors de la récupération des projets.', error: error.message });
+  }
+};
+
+/**
+ * Installe un package npm dans un projet spécifique.
+ * @param req - Requête Express contenant project et packageName dans le corps.
+ * @param res - Réponse Express.
+ */
 export const installPackage = async (req: Request, res: Response) => {
   const schema = Joi.object({
     project: Joi.string().required(),
@@ -89,6 +121,7 @@ export const installPackage = async (req: Request, res: Response) => {
 
   const { error } = schema.validate(req.body);
   if (error) {
+    logger.error(`Validation error: ${error.details[0].message}`);
     return res.status(400).json({ message: error.details[0].message });
   }
 
@@ -98,6 +131,7 @@ export const installPackage = async (req: Request, res: Response) => {
     // Trouver le projet dans la base de données
     const existingProject = await Project.findOne({ name: project });
     if (!existingProject) {
+      logger.warn(`Install package failed: Project "${project}" not found.`);
       return res.status(404).json({ message: 'Projet non trouvé.' });
     }
 
@@ -105,28 +139,29 @@ export const installPackage = async (req: Request, res: Response) => {
 
     // Vérifier si le dossier du projet existe
     if (!fs.existsSync(projectPath)) {
+      logger.error(`Project directory does not exist: ${projectPath}`);
       return res.status(400).json({ message: 'Le dossier du projet n\'existe pas.' });
     }
 
-    console.log(`Installing package "${packageName}" in project "${project}".`);
+    logger.info(`Installing package "${packageName}" in project "${project}".`);
 
     // Exécuter la commande npm install
     exec(`npm install ${packageName}`, { cwd: projectPath }, (error, stdout, stderr) => {
       if (error) {
-        console.error(`Error installing package: ${error.message}`);
-        return res.status(500).json({ message: 'Erreur lors de l\'installation du package.', stderr: error.message });
+        logger.error(`Error installing package: ${error.message}`);
+        return res.status(500).json({ message: 'Erreur lors de l\'installation du package.', stderr: stderr });
       }
 
       if (stderr) {
-        console.error(`stderr: ${stderr}`);
+        logger.warn(`npm stderr: ${stderr}`);
         // Vous pouvez choisir d'envoyer stderr comme partie de la réponse
       }
 
-      console.log(`stdout: ${stdout}`);
-      res.json({ message: `Package ${packageName} installé avec succès.`, stdout, stderr });
+      logger.info(`npm stdout: ${stdout}`);
+      res.json({ message: `Package "${packageName}" installé avec succès.`, stdout, stderr });
     });
-  } catch (error) {
-    console.error('Error installing package:', error);
-    res.status(500).json({ message: 'Erreur lors de l\'installation du package.' });
+  } catch (error: any) {
+    logger.error(`Error installing package: ${error.message}`);
+    res.status(500).json({ message: 'Erreur lors de l\'installation du package.', error: error.message });
   }
 };

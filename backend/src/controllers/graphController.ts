@@ -5,7 +5,7 @@ import Project from '../models/Project';
 import NodeModel from '../models/Node';
 import Edge from '../models/Edge';
 import path from 'path';
-import fs from 'fs';
+import fs from 'fs/promises';
 
 export const getProjectGraph = async (req: Request, res: Response) => {
   const { project } = req.query;
@@ -50,8 +50,15 @@ export const updateGraph = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Project not found.' });
     }
 
-    // Chemin vers le dossier du projet
     const projectPath = path.join(__dirname, '..', 'projects', project);
+
+    // Vérifier si le dossier du projet existe
+    try {
+      await fs.access(projectPath);
+    } catch (err) {
+      console.error(`Project directory "${projectPath}" does not exist.`);
+      return res.status(400).json({ message: 'Project directory does not exist.' });
+    }
 
     // Préparer les opérations bulkWrite pour les nœuds
     const nodeOperations = nodes.map((node: any) => ({
@@ -94,15 +101,16 @@ export const updateGraph = async (req: Request, res: Response) => {
     console.log('Prepared node operations:', nodeOperations);
     console.log('Prepared edge operations:', edgeOperations);
 
-    // Exécuter les opérations bulkWrite
+    let bulkWriteResultNodes, bulkWriteResultEdges;
+
     if (nodeOperations.length > 0) {
-      await NodeModel.bulkWrite(nodeOperations);
-      console.log('Nodes upserted successfully.');
+      bulkWriteResultNodes = await NodeModel.bulkWrite(nodeOperations);
+      console.log('Nodes upserted successfully.', bulkWriteResultNodes);
     }
 
     if (edgeOperations.length > 0) {
-      await Edge.bulkWrite(edgeOperations);
-      console.log('Edges upserted successfully.');
+      bulkWriteResultEdges = await Edge.bulkWrite(edgeOperations);
+      console.log('Edges upserted successfully.', bulkWriteResultEdges);
     }
 
     // Valider les arêtes pour s'assurer que les sources et targets existent
@@ -122,14 +130,19 @@ export const updateGraph = async (req: Request, res: Response) => {
     // Écrire les fichiers des nœuds dans le système de fichiers
     for (const node of nodes) {
       const filePath = path.join(projectPath, node.data.fileName);
-      fs.writeFileSync(filePath, node.data.code);
-      console.log(`File written: ${filePath}`);
+      try {
+        await fs.writeFile(filePath, node.data.code);
+        console.log(`File written: ${filePath}`);
+      } catch (fsError) {
+        console.error(`Error writing file ${filePath}:`, fsError);
+        return res.status(500).json({ message: `Error writing file for node ${node.id}.`, error: fsError.message });
+      }
     }
 
     res.json({ message: 'Graph updated successfully.' });
   } catch (error) {
     console.error('Error updating graph:', error);
-    res.status(500).json({ message: 'Error updating graph.' });
+    res.status(500).json({ message: 'Error updating graph.', error: error.message });
   }
 };
 
@@ -157,10 +170,10 @@ export const deleteNode = async (req: Request, res: Response) => {
     const filePath = path.join(projectPath, nodeToDelete.data.fileName);
 
     // Supprimer le fichier du nœud
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    try {
+      await fs.unlink(filePath);
       console.log(`File deleted: ${filePath}`);
-    } else {
+    } catch (error) {
       console.warn(`File not found for deletion: ${filePath}`);
     }
 
@@ -198,13 +211,13 @@ export const cloneNode = async (req: Request, res: Response) => {
     const clonedNode = nodeToClone.toObject();
     clonedNode.id = newNodeId;
     clonedNode.position = {
-      x: clonedNode.position.x + 100, // Déplacer légèrement la position pour éviter le chevauchement
+      x: clonedNode.position.x + 100,
       y: clonedNode.position.y + 100,
     };
     clonedNode.data = {
       ...clonedNode.data,
-      label: newNodeId || clonedNode.data.fileName || 'Unnamed Node', // Assurer que data.label est présent
-      fileName: newNodeId || clonedNode.data.fileName || 'UnnamedFile.js', // Mettre à jour le nom de fichier
+      label: `${clonedNode.data.label} (Clone)`,
+      fileName: `${clonedNode.data.fileName.split('.').slice(0, -1).join('.')}_clone.${clonedNode.data.fileName.split('.').pop()}`,
     };
     delete clonedNode._id;
 
@@ -213,7 +226,7 @@ export const cloneNode = async (req: Request, res: Response) => {
     const newFilePath = path.join(projectPath, clonedNode.data.fileName);
 
     // Créer et écrire le fichier cloné
-    fs.writeFileSync(newFilePath, clonedNode.data.code);
+    await fs.writeFile(newFilePath, clonedNode.data.code);
     console.log(`Cloned file created: ${newFilePath}`);
 
     const newNode = new NodeModel(clonedNode);
