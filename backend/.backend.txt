@@ -1,14 +1,3 @@
-/// my-low-code-app/backend/src/api/axiosInstance.ts
-
-import axios from 'axios';
-
-const axiosInstance = axios.create({
-  baseURL: 'http://localhost:3000', // URL de base de l'API backend
-});
-
-export default axiosInstance;
-
----------
 /// my-low-code-app/backend/src/context.ts
 
 // backend/src/context.ts
@@ -505,67 +494,191 @@ export const updateNode = async (req: Request, res: Response) => {
 ---------
 /// my-low-code-app/backend/src/controllers/gitController.ts
 
+// backend/src/controllers/gitController.ts
+
 import { Request, Response } from 'express';
-import simpleGit, { SimpleGit } from 'simple-git';
+import { exec } from 'child_process';
+import fs from 'fs/promises';
 import path from 'path';
+import Project from '../models/Project';
+import NodeModel from '../models/Node';
+import EdgeModel from '../models/Edge';
+import logger from '../utils/logger';
+import { parse } from '@babel/parser';
+import traverse from '@babel/traverse';
+import simpleGit, { SimpleGit } from 'simple-git';
 
 const git: SimpleGit = simpleGit();
 
-export const commitChanges = async (req: Request, res: Response) => {
-  const { project, message } = req.body;
+/**
+ * Fonction pour extraire les fonctions exportées d'un fichier.
+ */
+async function extractExportedFunctions(filePath: string): Promise<string[]> {
+  const code = await fs.readFile(filePath, 'utf-8');
+  const exportedFunctions: string[] = [];
+  const ast = parse(code, {
+    sourceType: 'module',
+    plugins: ['typescript', 'jsx'],
+  });
 
-  if (!project || !message) {
-    return res.status(400).json({ message: 'Project and commit message are required.' });
+  traverse(ast, {
+    ExportNamedDeclaration(path) {
+      const { declaration } = path.node;
+      if (declaration && declaration.type === 'FunctionDeclaration') {
+        const funcName = declaration.id?.name;
+        if (funcName) {
+          exportedFunctions.push(funcName);
+        }
+      }
+    },
+    ExportSpecifier(path) {
+      const exportedNode = path.node.exported;
+      const funcName = 'name' in exportedNode ? exportedNode.name : exportedNode.value;
+      exportedFunctions.push(funcName);
+    },
+  });
+
+  return exportedFunctions;
+}
+
+/**
+ * Démarre un processus asynchrone pour analyser les fichiers et générer les nœuds et arêtes.
+ */
+async function analyzeProjectFiles(projectPath: string, projectId: string) {
+  const files = await fs.readdir(projectPath, { withFileTypes: true });
+  const jsTsFiles = files.filter(file => file.isFile() && (file.name.endsWith('.js') || file.name.endsWith('.ts')));
+
+  const nodes: any[] = [];
+  const edges: any[] = [];
+
+  for (const file of jsTsFiles) {
+    const filePath = path.join(projectPath, file.name);
+    const content = await fs.readFile(filePath, 'utf-8');
+    const exportedFunctions = await extractExportedFunctions(filePath);
+
+    // Extraire les imports pour créer des arêtes
+    const imports: string[] = [];
+    const ast = parse(content, {
+      sourceType: 'module',
+      plugins: ['typescript', 'jsx'],
+    });
+
+    traverse(ast, {
+      ImportDeclaration(path) {
+        const source = path.node.source.value;
+        imports.push(source);
+      },
+    });
+
+    // Créer un nœud pour ce fichier
+    const nodeId = file.name; // Utiliser le nom du fichier comme ID
+    const newNode = {
+      project: projectId,
+      id: nodeId,
+      type: 'code',
+      position: { x: Math.random() * 500, y: Math.random() * 500 }, // Position aléatoire ou basée sur une logique
+      data: {
+        label: file.name,
+        fileName: file.name,
+        imports: imports,
+        code: content,
+        exportedFunctions: exportedFunctions,
+      },
+    };
+
+    nodes.push(newNode);
+
+    // Créer des arêtes basées sur les imports
+    for (const imp of imports) {
+      // Résoudre le chemin relatif ou les modules
+      let target = imp;
+      if (imp.startsWith('./') || imp.startsWith('../')) {
+        const importPath = path.resolve(projectPath, imp);
+        const importFile = path.basename(importPath);
+        target = importFile;
+      }
+
+      edges.push({
+        project: projectId,
+        id: `edge_${nodeId}_to_${target}`,
+        source: nodeId,
+        target: target,
+        animated: false,
+        label: 'imports',
+      });
+    }
   }
 
-  const projectPath = path.join(__dirname, '..', 'projects', project);
+  // Enregistrer les nœuds dans la base de données
+  for (const node of nodes) {
+    await NodeModel.findOneAndUpdate(
+      { project: node.project, id: node.id },
+      node,
+      { upsert: true, new: true, runValidators: true }
+    );
+    logger.info(`Node créé/mis à jour pour le fichier: ${node.id}`);
+  }
+
+  // Enregistrer les arêtes dans la base de données
+  for (const edge of edges) {
+    await EdgeModel.findOneAndUpdate(
+      { project: edge.project, id: edge.id },
+      edge,
+      { upsert: true, new: true, runValidators: true }
+    );
+    logger.info(`Arête créée/mise à jour: ${edge.id}`);
+  }
+}
+
+export const pullFromGit = async (req: Request, res: Response) => {
+  const { repoUrl } = req.body;
+  
+  if (!repoUrl) {
+    logger.warn('Git pull attempt without repository URL');
+    return res.status(400).json({ error: 'URL du dépôt Git requise' });
+  }
+
+  const projectName = path.basename(repoUrl, '.git');
+  const projectPath = path.join(__dirname, '..', 'projects', projectName);
 
   try {
-    await git.cwd(projectPath);
-    await git.add('.');
-    await git.commit(message);
-    res.json({ message: 'Changes committed successfully.' });
+    // Cloner ou mettre à jour le projet
+    if (await fs.access(projectPath).then(() => true).catch(() => false)) {
+      await git.cwd(projectPath);
+      await git.pull();
+      logger.info(`Git pull successful pour le projet: ${projectName}`);
+    } else {
+      await git.clone(repoUrl, projectPath);
+      logger.info(`Git clone successful: ${repoUrl} dans ${projectPath}`);
+    }
+
+    // Créer ou mettre à jour le projet dans la base de données
+    let project = await Project.findOne({ name: projectName });
+    if (!project) {
+      project = new Project({ name: projectName });
+      await project.save();
+      logger.info(`Nouveau projet créé dans la base de données: ${projectName}`);
+    }
+
+    // Analyser le projet et créer/mettre à jour les nœuds et arêtes
+    await analyzeProjectFiles(projectPath, project._id.toString());
+
+    // Installer les dépendances du projet
+    await new Promise<void>((resolve, reject) => {
+      exec('npm install', { cwd: projectPath }, (error, stdout, stderr) => {
+        if (error) {
+          logger.error(`Erreur lors de l'installation des dépendances: ${error.message}`);
+          return reject(error);
+        }
+        logger.info(`npm install successful pour le projet: ${projectName}`);
+        resolve();
+      });
+    });
+
+    res.json({ message: 'Projet importé et installé avec succès', projectName });
   } catch (error: any) {
-    console.error('Error committing changes:', error);
-    res.status(500).json({ message: 'Error committing changes.', error: error.message });
-  }
-};
-
-export const pushChanges = async (req: Request, res: Response) => {
-  const { project } = req.body;
-
-  if (!project) {
-    return res.status(400).json({ message: 'Project is required.' });
-  }
-
-  const projectPath = path.join(__dirname, '..', 'projects', project);
-
-  try {
-    await git.cwd(projectPath);
-    await git.push();
-    res.json({ message: 'Changes pushed to GitHub successfully.' });
-  } catch (error: any) {
-    console.error('Error pushing changes:', error);
-    res.status(500).json({ message: 'Error pushing changes.', error: error.message });
-  }
-};
-
-export const pullChanges = async (req: Request, res: Response) => {
-  const { project } = req.body;
-
-  if (!project) {
-    return res.status(400).json({ message: 'Project is required.' });
-  }
-
-  const projectPath = path.join(__dirname, '..', 'projects', project);
-
-  try {
-    await git.cwd(projectPath);
-    await git.pull();
-    res.json({ message: 'Changes pulled from GitHub successfully.' });
-  } catch (error: any) {
-    console.error('Error pulling changes:', error);
-    res.status(500).json({ message: 'Error pulling changes.', error: error.message });
+    logger.error(`Error importing project: ${error.message}`);
+    res.status(500).json({ message: 'Erreur lors de l\'importation du projet', error: error.message });
   }
 };
 
@@ -1049,8 +1162,12 @@ import path from 'path';
 import fs from 'fs';
 import Joi from 'joi';
 import Project from '../models/Project';
+import NodeModel from '../models/Node';
+import Edge from '../models/Edge';
 import simpleGit, { SimpleGit } from 'simple-git';
 import logger from '../utils/logger';
+
+
 
 // Initialiser simple-git avec l'option de journalisation
 const git: SimpleGit = simpleGit();
@@ -1208,6 +1325,39 @@ export const installPackage = async (req: Request, res: Response) => {
   } catch (error: any) {
     logger.error(`Error installing package: ${error.message}`);
     res.status(500).json({ message: 'Erreur lors de l\'installation du package.', error: error.message });
+  }
+};
+
+export const deleteProject = async (req: Request, res: Response) => {
+  const { projectName } = req.params;
+  logger.info(`Attempting to delete project: ${projectName}`);
+
+  try {
+    // Supprimer le projet de la base de données
+    const project = await Project.findOneAndDelete({ name: projectName });
+    if (!project) {
+      logger.warn(`Project not found: ${projectName}`);
+      return res.status(404).json({ message: 'Projet non trouvé.' });
+    }
+
+    logger.info(`Project "${projectName}" deleted from database.`);
+
+    // Supprimer tous les nœuds et arêtes associés
+    await NodeModel.deleteMany({ project: project._id });
+    await Edge.deleteMany({ project: project._id });
+    logger.info(`Associated nodes and edges deleted for project "${projectName}".`);
+
+    // Supprimer le dossier du projet
+    const projectPath = path.join(__dirname, '..', 'projects', projectName);
+    logger.info(`Project path to delete: ${projectPath}`);
+
+    await fs.promises.rm(projectPath, { recursive: true, force: true });
+    logger.info(`Project directory "${projectPath}" deleted successfully.`);
+
+    res.json({ message: 'Projet supprimé avec succès.' });
+  } catch (error: any) {
+    logger.error(`Error deleting project "${projectName}": ${error.message}`);
+    res.status(500).json({ message: 'Erreur lors de la suppression du projet.', error: error.message });
   }
 };
 
@@ -1406,595 +1556,6 @@ export default mongoose.model<IUser>('User', UserSchema);
 
 
 ---------
-/// my-low-code-app/backend/src/projects/cheik/index.ts
-
-test
-
----------
-/// my-low-code-app/backend/src/projects/nouveautest/index.ts
-
-naruto
-
----------
-/// my-low-code-app/backend/src/projects/test/index.ts
-
-test
-
----------
-/// my-low-code-app/backend/src/projects/test/node_modules/axios/index.d.ts
-
-// TypeScript Version: 4.7
-export type AxiosHeaderValue = AxiosHeaders | string | string[] | number | boolean | null;
-
-interface RawAxiosHeaders {
-  [key: string]: AxiosHeaderValue;
-}
-
-type MethodsHeaders = Partial<{
-  [Key in Method as Lowercase<Key>]: AxiosHeaders;
-} & {common: AxiosHeaders}>;
-
-type AxiosHeaderMatcher = string | RegExp | ((this: AxiosHeaders, value: string, name: string) => boolean);
-
-type AxiosHeaderParser = (this: AxiosHeaders, value: AxiosHeaderValue, header: string) => any;
-
-export class AxiosHeaders {
-  constructor(
-      headers?: RawAxiosHeaders | AxiosHeaders | string
-  );
-
-  [key: string]: any;
-
-  set(headerName?: string, value?: AxiosHeaderValue, rewrite?: boolean | AxiosHeaderMatcher): AxiosHeaders;
-  set(headers?: RawAxiosHeaders | AxiosHeaders | string, rewrite?: boolean): AxiosHeaders;
-
-  get(headerName: string, parser: RegExp): RegExpExecArray | null;
-  get(headerName: string, matcher?: true | AxiosHeaderParser): AxiosHeaderValue;
-
-  has(header: string, matcher?: AxiosHeaderMatcher): boolean;
-
-  delete(header: string | string[], matcher?: AxiosHeaderMatcher): boolean;
-
-  clear(matcher?: AxiosHeaderMatcher): boolean;
-
-  normalize(format: boolean): AxiosHeaders;
-
-  concat(...targets: Array<AxiosHeaders | RawAxiosHeaders | string | undefined | null>): AxiosHeaders;
-
-  toJSON(asStrings?: boolean): RawAxiosHeaders;
-
-  static from(thing?: AxiosHeaders | RawAxiosHeaders | string): AxiosHeaders;
-
-  static accessor(header: string | string[]): AxiosHeaders;
-
-  static concat(...targets: Array<AxiosHeaders | RawAxiosHeaders | string | undefined | null>): AxiosHeaders;
-
-  setContentType(value: ContentType, rewrite?: boolean | AxiosHeaderMatcher): AxiosHeaders;
-  getContentType(parser?: RegExp): RegExpExecArray | null;
-  getContentType(matcher?: AxiosHeaderMatcher): AxiosHeaderValue;
-  hasContentType(matcher?: AxiosHeaderMatcher): boolean;
-
-  setContentLength(value: AxiosHeaderValue, rewrite?: boolean | AxiosHeaderMatcher): AxiosHeaders;
-  getContentLength(parser?: RegExp): RegExpExecArray | null;
-  getContentLength(matcher?: AxiosHeaderMatcher): AxiosHeaderValue;
-  hasContentLength(matcher?: AxiosHeaderMatcher): boolean;
-
-  setAccept(value: AxiosHeaderValue, rewrite?: boolean | AxiosHeaderMatcher): AxiosHeaders;
-  getAccept(parser?: RegExp): RegExpExecArray | null;
-  getAccept(matcher?: AxiosHeaderMatcher): AxiosHeaderValue;
-  hasAccept(matcher?: AxiosHeaderMatcher): boolean;
-
-  setUserAgent(value: AxiosHeaderValue, rewrite?: boolean | AxiosHeaderMatcher): AxiosHeaders;
-  getUserAgent(parser?: RegExp): RegExpExecArray | null;
-  getUserAgent(matcher?: AxiosHeaderMatcher): AxiosHeaderValue;
-  hasUserAgent(matcher?: AxiosHeaderMatcher): boolean;
-
-  setContentEncoding(value: AxiosHeaderValue, rewrite?: boolean | AxiosHeaderMatcher): AxiosHeaders;
-  getContentEncoding(parser?: RegExp): RegExpExecArray | null;
-  getContentEncoding(matcher?: AxiosHeaderMatcher): AxiosHeaderValue;
-  hasContentEncoding(matcher?: AxiosHeaderMatcher): boolean;
-
-  setAuthorization(value: AxiosHeaderValue, rewrite?: boolean | AxiosHeaderMatcher): AxiosHeaders;
-  getAuthorization(parser?: RegExp): RegExpExecArray | null;
-  getAuthorization(matcher?: AxiosHeaderMatcher): AxiosHeaderValue;
-  hasAuthorization(matcher?: AxiosHeaderMatcher): boolean;
-
-  [Symbol.iterator](): IterableIterator<[string, AxiosHeaderValue]>;
-}
-
-type CommonRequestHeadersList = 'Accept' | 'Content-Length' | 'User-Agent' | 'Content-Encoding' | 'Authorization';
-
-type ContentType = AxiosHeaderValue | 'text/html' | 'text/plain' | 'multipart/form-data' | 'application/json' | 'application/x-www-form-urlencoded' | 'application/octet-stream';
-
-export type RawAxiosRequestHeaders = Partial<RawAxiosHeaders & {
-  [Key in CommonRequestHeadersList]: AxiosHeaderValue;
-} & {
-  'Content-Type': ContentType
-}>;
-
-export type AxiosRequestHeaders = RawAxiosRequestHeaders & AxiosHeaders;
-
-type CommonResponseHeadersList = 'Server' | 'Content-Type' | 'Content-Length' | 'Cache-Control'| 'Content-Encoding';
-
-type RawCommonResponseHeaders = {
-  [Key in CommonResponseHeadersList]: AxiosHeaderValue;
-} & {
-  "set-cookie": string[];
-};
-
-export type RawAxiosResponseHeaders = Partial<RawAxiosHeaders & RawCommonResponseHeaders>;
-
-export type AxiosResponseHeaders = RawAxiosResponseHeaders & AxiosHeaders;
-
-export interface AxiosRequestTransformer {
-  (this: InternalAxiosRequestConfig, data: any, headers: AxiosRequestHeaders): any;
-}
-
-export interface AxiosResponseTransformer {
-  (this: InternalAxiosRequestConfig, data: any, headers: AxiosResponseHeaders, status?: number): any;
-}
-
-export interface AxiosAdapter {
-  (config: InternalAxiosRequestConfig): AxiosPromise;
-}
-
-export interface AxiosBasicCredentials {
-  username: string;
-  password: string;
-}
-
-export interface AxiosProxyConfig {
-  host: string;
-  port: number;
-  auth?: AxiosBasicCredentials;
-  protocol?: string;
-}
-
-export enum HttpStatusCode {
-  Continue = 100,
-  SwitchingProtocols = 101,
-  Processing = 102,
-  EarlyHints = 103,
-  Ok = 200,
-  Created = 201,
-  Accepted = 202,
-  NonAuthoritativeInformation = 203,
-  NoContent = 204,
-  ResetContent = 205,
-  PartialContent = 206,
-  MultiStatus = 207,
-  AlreadyReported = 208,
-  ImUsed = 226,
-  MultipleChoices = 300,
-  MovedPermanently = 301,
-  Found = 302,
-  SeeOther = 303,
-  NotModified = 304,
-  UseProxy = 305,
-  Unused = 306,
-  TemporaryRedirect = 307,
-  PermanentRedirect = 308,
-  BadRequest = 400,
-  Unauthorized = 401,
-  PaymentRequired = 402,
-  Forbidden = 403,
-  NotFound = 404,
-  MethodNotAllowed = 405,
-  NotAcceptable = 406,
-  ProxyAuthenticationRequired = 407,
-  RequestTimeout = 408,
-  Conflict = 409,
-  Gone = 410,
-  LengthRequired = 411,
-  PreconditionFailed = 412,
-  PayloadTooLarge = 413,
-  UriTooLong = 414,
-  UnsupportedMediaType = 415,
-  RangeNotSatisfiable = 416,
-  ExpectationFailed = 417,
-  ImATeapot = 418,
-  MisdirectedRequest = 421,
-  UnprocessableEntity = 422,
-  Locked = 423,
-  FailedDependency = 424,
-  TooEarly = 425,
-  UpgradeRequired = 426,
-  PreconditionRequired = 428,
-  TooManyRequests = 429,
-  RequestHeaderFieldsTooLarge = 431,
-  UnavailableForLegalReasons = 451,
-  InternalServerError = 500,
-  NotImplemented = 501,
-  BadGateway = 502,
-  ServiceUnavailable = 503,
-  GatewayTimeout = 504,
-  HttpVersionNotSupported = 505,
-  VariantAlsoNegotiates = 506,
-  InsufficientStorage = 507,
-  LoopDetected = 508,
-  NotExtended = 510,
-  NetworkAuthenticationRequired = 511,
-}
-
-export type Method =
-    | 'get' | 'GET'
-    | 'delete' | 'DELETE'
-    | 'head' | 'HEAD'
-    | 'options' | 'OPTIONS'
-    | 'post' | 'POST'
-    | 'put' | 'PUT'
-    | 'patch' | 'PATCH'
-    | 'purge' | 'PURGE'
-    | 'link' | 'LINK'
-    | 'unlink' | 'UNLINK';
-
-export type ResponseType =
-    | 'arraybuffer'
-    | 'blob'
-    | 'document'
-    | 'json'
-    | 'text'
-    | 'stream'
-    | 'formdata';
-
-export type responseEncoding =
-    | 'ascii' | 'ASCII'
-    | 'ansi' | 'ANSI'
-    | 'binary' | 'BINARY'
-    | 'base64' | 'BASE64'
-    | 'base64url' | 'BASE64URL'
-    | 'hex' | 'HEX'
-    | 'latin1' | 'LATIN1'
-    | 'ucs-2' | 'UCS-2'
-    | 'ucs2' | 'UCS2'
-    | 'utf-8' | 'UTF-8'
-    | 'utf8' | 'UTF8'
-    | 'utf16le' | 'UTF16LE';
-
-export interface TransitionalOptions {
-  silentJSONParsing?: boolean;
-  forcedJSONParsing?: boolean;
-  clarifyTimeoutError?: boolean;
-}
-
-export interface GenericAbortSignal {
-  readonly aborted: boolean;
-  onabort?: ((...args: any) => any) | null;
-  addEventListener?: (...args: any) => any;
-  removeEventListener?: (...args: any) => any;
-}
-
-export interface FormDataVisitorHelpers {
-  defaultVisitor: SerializerVisitor;
-  convertValue: (value: any) => any;
-  isVisitable: (value: any) => boolean;
-}
-
-export interface SerializerVisitor {
-  (
-      this: GenericFormData,
-      value: any,
-      key: string | number,
-      path: null | Array<string | number>,
-      helpers: FormDataVisitorHelpers
-  ): boolean;
-}
-
-export interface SerializerOptions {
-  visitor?: SerializerVisitor;
-  dots?: boolean;
-  metaTokens?: boolean;
-  indexes?: boolean | null;
-}
-
-// tslint:disable-next-line
-export interface FormSerializerOptions extends SerializerOptions {
-}
-
-export interface ParamEncoder {
-  (value: any, defaultEncoder: (value: any) => any): any;
-}
-
-export interface CustomParamsSerializer {
-  (params: Record<string, any>, options?: ParamsSerializerOptions): string;
-}
-
-export interface ParamsSerializerOptions extends SerializerOptions {
-  encode?: ParamEncoder;
-  serialize?: CustomParamsSerializer;
-}
-
-type MaxUploadRate = number;
-
-type MaxDownloadRate = number;
-
-type BrowserProgressEvent = any;
-
-export interface AxiosProgressEvent {
-  loaded: number;
-  total?: number;
-  progress?: number;
-  bytes: number;
-  rate?: number;
-  estimated?: number;
-  upload?: boolean;
-  download?: boolean;
-  event?: BrowserProgressEvent;
-  lengthComputable: boolean;
-}
-
-type Milliseconds = number;
-
-type AxiosAdapterName = 'fetch' | 'xhr' | 'http' | string;
-
-type AxiosAdapterConfig = AxiosAdapter | AxiosAdapterName;
-
-export type AddressFamily = 4 | 6 | undefined;
-
-export interface LookupAddressEntry {
-  address: string;
-  family?: AddressFamily;
-}
-
-export type LookupAddress = string | LookupAddressEntry;
-
-export interface AxiosRequestConfig<D = any> {
-  url?: string;
-  method?: Method | string;
-  baseURL?: string;
-  transformRequest?: AxiosRequestTransformer | AxiosRequestTransformer[];
-  transformResponse?: AxiosResponseTransformer | AxiosResponseTransformer[];
-  headers?: (RawAxiosRequestHeaders & MethodsHeaders) | AxiosHeaders;
-  params?: any;
-  paramsSerializer?: ParamsSerializerOptions | CustomParamsSerializer;
-  data?: D;
-  timeout?: Milliseconds;
-  timeoutErrorMessage?: string;
-  withCredentials?: boolean;
-  adapter?: AxiosAdapterConfig | AxiosAdapterConfig[];
-  auth?: AxiosBasicCredentials;
-  responseType?: ResponseType;
-  responseEncoding?: responseEncoding | string;
-  xsrfCookieName?: string;
-  xsrfHeaderName?: string;
-  onUploadProgress?: (progressEvent: AxiosProgressEvent) => void;
-  onDownloadProgress?: (progressEvent: AxiosProgressEvent) => void;
-  maxContentLength?: number;
-  validateStatus?: ((status: number) => boolean) | null;
-  maxBodyLength?: number;
-  maxRedirects?: number;
-  maxRate?: number | [MaxUploadRate, MaxDownloadRate];
-  beforeRedirect?: (options: Record<string, any>, responseDetails: {headers: Record<string, string>, statusCode: HttpStatusCode}) => void;
-  socketPath?: string | null;
-  transport?: any;
-  httpAgent?: any;
-  httpsAgent?: any;
-  proxy?: AxiosProxyConfig | false;
-  cancelToken?: CancelToken;
-  decompress?: boolean;
-  transitional?: TransitionalOptions;
-  signal?: GenericAbortSignal;
-  insecureHTTPParser?: boolean;
-  env?: {
-    FormData?: new (...args: any[]) => object;
-  };
-  formSerializer?: FormSerializerOptions;
-  family?: AddressFamily;
-  lookup?: ((hostname: string, options: object, cb: (err: Error | null, address: LookupAddress | LookupAddress[], family?: AddressFamily) => void) => void) |
-      ((hostname: string, options: object) => Promise<[address: LookupAddressEntry | LookupAddressEntry[], family?: AddressFamily] | LookupAddress>);
-  withXSRFToken?: boolean | ((config: InternalAxiosRequestConfig) => boolean | undefined);
-  fetchOptions?: Record<string, any>;
-}
-
-// Alias
-export type RawAxiosRequestConfig<D = any> = AxiosRequestConfig<D>;
-
-export interface InternalAxiosRequestConfig<D = any> extends AxiosRequestConfig<D> {
-  headers: AxiosRequestHeaders;
-}
-
-export interface HeadersDefaults {
-  common: RawAxiosRequestHeaders;
-  delete: RawAxiosRequestHeaders;
-  get: RawAxiosRequestHeaders;
-  head: RawAxiosRequestHeaders;
-  post: RawAxiosRequestHeaders;
-  put: RawAxiosRequestHeaders;
-  patch: RawAxiosRequestHeaders;
-  options?: RawAxiosRequestHeaders;
-  purge?: RawAxiosRequestHeaders;
-  link?: RawAxiosRequestHeaders;
-  unlink?: RawAxiosRequestHeaders;
-}
-
-export interface AxiosDefaults<D = any> extends Omit<AxiosRequestConfig<D>, 'headers'> {
-  headers: HeadersDefaults;
-}
-
-export interface CreateAxiosDefaults<D = any> extends Omit<AxiosRequestConfig<D>, 'headers'> {
-  headers?: RawAxiosRequestHeaders | AxiosHeaders | Partial<HeadersDefaults>;
-}
-
-export interface AxiosResponse<T = any, D = any> {
-  data: T;
-  status: number;
-  statusText: string;
-  headers: RawAxiosResponseHeaders | AxiosResponseHeaders;
-  config: InternalAxiosRequestConfig<D>;
-  request?: any;
-}
-
-export class AxiosError<T = unknown, D = any> extends Error {
-  constructor(
-      message?: string,
-      code?: string,
-      config?: InternalAxiosRequestConfig<D>,
-      request?: any,
-      response?: AxiosResponse<T, D>
-  );
-
-  config?: InternalAxiosRequestConfig<D>;
-  code?: string;
-  request?: any;
-  response?: AxiosResponse<T, D>;
-  isAxiosError: boolean;
-  status?: number;
-  toJSON: () => object;
-  cause?: Error;
-  static from<T = unknown, D = any>(
-    error: Error | unknown,
-    code?: string,
-    config?: InternalAxiosRequestConfig<D>,
-    request?: any,
-    response?: AxiosResponse<T, D>,
-    customProps?: object,
-): AxiosError<T, D>;
-  static readonly ERR_FR_TOO_MANY_REDIRECTS = "ERR_FR_TOO_MANY_REDIRECTS";
-  static readonly ERR_BAD_OPTION_VALUE = "ERR_BAD_OPTION_VALUE";
-  static readonly ERR_BAD_OPTION = "ERR_BAD_OPTION";
-  static readonly ERR_NETWORK = "ERR_NETWORK";
-  static readonly ERR_DEPRECATED = "ERR_DEPRECATED";
-  static readonly ERR_BAD_RESPONSE = "ERR_BAD_RESPONSE";
-  static readonly ERR_BAD_REQUEST = "ERR_BAD_REQUEST";
-  static readonly ERR_NOT_SUPPORT = "ERR_NOT_SUPPORT";
-  static readonly ERR_INVALID_URL = "ERR_INVALID_URL";
-  static readonly ERR_CANCELED = "ERR_CANCELED";
-  static readonly ECONNABORTED = "ECONNABORTED";
-  static readonly ETIMEDOUT = "ETIMEDOUT";
-}
-
-export class CanceledError<T> extends AxiosError<T> {
-}
-
-export type AxiosPromise<T = any> = Promise<AxiosResponse<T>>;
-
-export interface CancelStatic {
-  new (message?: string): Cancel;
-}
-
-export interface Cancel {
-  message: string | undefined;
-}
-
-export interface Canceler {
-  (message?: string, config?: AxiosRequestConfig, request?: any): void;
-}
-
-export interface CancelTokenStatic {
-  new (executor: (cancel: Canceler) => void): CancelToken;
-  source(): CancelTokenSource;
-}
-
-export interface CancelToken {
-  promise: Promise<Cancel>;
-  reason?: Cancel;
-  throwIfRequested(): void;
-}
-
-export interface CancelTokenSource {
-  token: CancelToken;
-  cancel: Canceler;
-}
-
-export interface AxiosInterceptorOptions {
-  synchronous?: boolean;
-  runWhen?: (config: InternalAxiosRequestConfig) => boolean;
-}
-
-export interface AxiosInterceptorManager<V> {
-  use(onFulfilled?: ((value: V) => V | Promise<V>) | null, onRejected?: ((error: any) => any) | null, options?: AxiosInterceptorOptions): number;
-  eject(id: number): void;
-  clear(): void;
-}
-
-export class Axios {
-  constructor(config?: AxiosRequestConfig);
-  defaults: AxiosDefaults;
-  interceptors: {
-    request: AxiosInterceptorManager<InternalAxiosRequestConfig>;
-    response: AxiosInterceptorManager<AxiosResponse>;
-  };
-  getUri(config?: AxiosRequestConfig): string;
-  request<T = any, R = AxiosResponse<T>, D = any>(config: AxiosRequestConfig<D>): Promise<R>;
-  get<T = any, R = AxiosResponse<T>, D = any>(url: string, config?: AxiosRequestConfig<D>): Promise<R>;
-  delete<T = any, R = AxiosResponse<T>, D = any>(url: string, config?: AxiosRequestConfig<D>): Promise<R>;
-  head<T = any, R = AxiosResponse<T>, D = any>(url: string, config?: AxiosRequestConfig<D>): Promise<R>;
-  options<T = any, R = AxiosResponse<T>, D = any>(url: string, config?: AxiosRequestConfig<D>): Promise<R>;
-  post<T = any, R = AxiosResponse<T>, D = any>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<R>;
-  put<T = any, R = AxiosResponse<T>, D = any>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<R>;
-  patch<T = any, R = AxiosResponse<T>, D = any>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<R>;
-  postForm<T = any, R = AxiosResponse<T>, D = any>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<R>;
-  putForm<T = any, R = AxiosResponse<T>, D = any>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<R>;
-  patchForm<T = any, R = AxiosResponse<T>, D = any>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<R>;
-}
-
-export interface AxiosInstance extends Axios {
-  <T = any, R = AxiosResponse<T>, D = any>(config: AxiosRequestConfig<D>): Promise<R>;
-  <T = any, R = AxiosResponse<T>, D = any>(url: string, config?: AxiosRequestConfig<D>): Promise<R>;
-
-  defaults: Omit<AxiosDefaults, 'headers'> & {
-    headers: HeadersDefaults & {
-      [key: string]: AxiosHeaderValue
-    }
-  };
-}
-
-export interface GenericFormData {
-  append(name: string, value: any, options?: any): any;
-}
-
-export interface GenericHTMLFormElement {
-  name: string;
-  method: string;
-  submit(): void;
-}
-
-export function getAdapter(adapters: AxiosAdapterConfig | AxiosAdapterConfig[] | undefined): AxiosAdapter;
-
-export function toFormData(sourceObj: object, targetFormData?: GenericFormData, options?: FormSerializerOptions): GenericFormData;
-
-export function formToJSON(form: GenericFormData|GenericHTMLFormElement): object;
-
-export function isAxiosError<T = any, D = any>(payload: any): payload is AxiosError<T, D>;
-
-export function spread<T, R>(callback: (...args: T[]) => R): (array: T[]) => R;
-
-export function isCancel(value: any): value is Cancel;
-
-export function all<T>(values: Array<T | Promise<T>>): Promise<T[]>;
-
-export interface AxiosStatic extends AxiosInstance {
-  create(config?: CreateAxiosDefaults): AxiosInstance;
-  Cancel: CancelStatic;
-  CancelToken: CancelTokenStatic;
-  Axios: typeof Axios;
-  AxiosError: typeof AxiosError;
-  HttpStatusCode: typeof HttpStatusCode;
-  readonly VERSION: string;
-  isCancel: typeof isCancel;
-  all: typeof all;
-  spread: typeof spread;
-  isAxiosError: typeof isAxiosError;
-  toFormData: typeof toFormData;
-  formToJSON: typeof formToJSON;
-  getAdapter: typeof getAdapter;
-  CanceledError: typeof CanceledError;
-  AxiosHeaders: typeof AxiosHeaders;
-}
-
-declare const axios: AxiosStatic;
-
-export default axios;
-
----------
-/// my-low-code-app/backend/src/projects/test/node_modules/form-data/index.d.ts
-
-// Definitions by: Carlos Ballesteros Velasco <https://github.com/soywiz>
-//                 Leon Yu <https://github.com/leonyu>
-//                 BendingBender <https://github.com/BendingBender>
-//                 Maple Miao <https://github.com/mapleeit>
-
----------
 /// my-low-code-app/backend/src/routes/authRoutes.ts
 
 // backend/src/routes/authRoutes.ts
@@ -2078,16 +1639,15 @@ export default router;
 /// my-low-code-app/backend/src/routes/gitRoutes.ts
 
 import express from 'express';
-import { commitChanges, pushChanges, pullChanges } from '../controllers/gitController';
+import { pullFromGit, commitChanges, pushChanges } from '../controllers/gitController';
 
 const router = express.Router();
 
+router.post('/pull', pullFromGit);
 router.post('/commit', commitChanges);
 router.post('/push', pushChanges);
-router.post('/pull', pullChanges);
 
 export default router;
-
 
 ---------
 /// my-low-code-app/backend/src/routes/graphRoutes.ts
@@ -2128,34 +1688,15 @@ export default router;
 ---------
 /// my-low-code-app/backend/src/routes/projectRoutes.ts
 
-// backend/src/routes/projectRoutes.ts
-
 import express from 'express';
-import { getProjects, createProject, installPackage } from '../controllers/projectController';
-// import { authenticateJWT } from '../middleware/auth'; // Commenter ou supprimer cette ligne
+import { getProjects, createProject, installPackage, deleteProject } from '../controllers/projectController';
 
 const router = express.Router();
 
-/**
- * @route GET /projects
- * @desc Récupère la liste des projets.
- * @access Public
- */
-router.get('/', /* authenticateJWT, */ getProjects);
-
-/**
- * @route POST /projects/create-project
- * @desc Crée un nouveau projet.
- * @access Public
- */
-router.post('/create-project', /* authenticateJWT, */ createProject);
-
-/**
- * @route POST /projects/install-package
- * @desc Installe un package npm dans un projet spécifique.
- * @access Public
- */
-router.post('/install-package', /* authenticateJWT, */ installPackage);
+router.get('/', getProjects);
+router.post('/create-project', createProject);
+router.post('/install-package', installPackage);
+router.delete('/:projectName', deleteProject);
 
 export default router;
 
@@ -2176,14 +1717,10 @@ import executeRoutes from './routes/executeRoutes';
 import devServerRoutes from './routes/devServerRoutes';
 import gitRoutes from './routes/gitRoutes';
 import importRoutes from './routes/importRoutes';
-import authRoutes from './routes/authRoutes'; // Importer les routes d'authentification
+import authRoutes from './routes/authRoutes';
 
 import { errorHandler } from './middleware/errorHandler';
 import logger from './utils/logger';
-
-// Documentation de l'API (par exemple Swagger)
-import swaggerUi from 'swagger-ui-express';
-import swaggerJsdoc from 'swagger-jsdoc';
 
 dotenv.config();
 
@@ -2195,7 +1732,7 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/auth', authRoutes); // Ajouter les routes d'authentification
+app.use('/auth', authRoutes);
 app.use('/projects', projectRoutes);
 app.use('/project-graph', graphRoutes);
 app.use('/update-file', fileRoutes);
@@ -2204,29 +1741,13 @@ app.use('/dev-server', devServerRoutes);
 app.use('/git', gitRoutes);
 app.use('/import', importRoutes);
 
-// Configuration Swagger
-const options = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'Low-Code App API',
-      version: '1.0.0',
-    },
-  },
-  apis: ['./src/routes/*.ts'], // Chemin vers vos fichiers de routes
-};
-
-const specs = swaggerJsdoc(options);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
-
-// Middleware de gestion des erreurs (doit être placé après toutes les routes)
+// Middleware de gestion des erreurs
 app.use(errorHandler);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/low-code-app')
   .then(() => {
     logger.info('Connected to MongoDB');
-    // Démarrer le serveur seulement après la connexion à MongoDB
     app.listen(PORT, () => {
       logger.info(`Server is running on port ${PORT}`);
     });
@@ -2235,6 +1756,7 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/low-code-ap
     logger.error(`MongoDB connection error: ${err.message}`);
   });
 
+export default app;
 
 ---------
 /// my-low-code-app/backend/src/types.ts

@@ -4,8 +4,12 @@ import path from 'path';
 import fs from 'fs';
 import Joi from 'joi';
 import Project from '../models/Project';
+import NodeModel from '../models/Node';
+import Edge from '../models/Edge';
 import simpleGit, { SimpleGit } from 'simple-git';
 import logger from '../utils/logger';
+
+
 
 // Initialiser simple-git avec l'option de journalisation
 const git: SimpleGit = simpleGit();
@@ -163,5 +167,38 @@ export const installPackage = async (req: Request, res: Response) => {
   } catch (error: any) {
     logger.error(`Error installing package: ${error.message}`);
     res.status(500).json({ message: 'Erreur lors de l\'installation du package.', error: error.message });
+  }
+};
+
+export const deleteProject = async (req: Request, res: Response) => {
+  const { projectName } = req.params;
+  logger.info(`Attempting to delete project: ${projectName}`);
+
+  try {
+    // Supprimer le projet de la base de données
+    const project = await Project.findOneAndDelete({ name: projectName });
+    if (!project) {
+      logger.warn(`Project not found: ${projectName}`);
+      return res.status(404).json({ message: 'Projet non trouvé.' });
+    }
+
+    logger.info(`Project "${projectName}" deleted from database.`);
+
+    // Supprimer tous les nœuds et arêtes associés
+    await NodeModel.deleteMany({ project: project._id });
+    await Edge.deleteMany({ project: project._id });
+    logger.info(`Associated nodes and edges deleted for project "${projectName}".`);
+
+    // Supprimer le dossier du projet
+    const projectPath = path.join(__dirname, '..', 'projects', projectName);
+    logger.info(`Project path to delete: ${projectPath}`);
+
+    await fs.promises.rm(projectPath, { recursive: true, force: true });
+    logger.info(`Project directory "${projectPath}" deleted successfully.`);
+
+    res.json({ message: 'Projet supprimé avec succès.' });
+  } catch (error: any) {
+    logger.error(`Error deleting project "${projectName}": ${error.message}`);
+    res.status(500).json({ message: 'Erreur lors de la suppression du projet.', error: error.message });
   }
 };
