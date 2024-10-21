@@ -1,11 +1,9 @@
-// backend/src/controllers/graphController.ts
-
 import { Request, Response } from 'express';
 import Project from '../models/Project';
 import NodeModel from '../models/Node';
 import Edge from '../models/Edge';
 import path from 'path';
-import fs from 'fs';
+import fs from 'fs/promises';
 
 export const getProjectGraph = async (req: Request, res: Response) => {
   const { project } = req.query;
@@ -33,7 +31,7 @@ export const getProjectGraph = async (req: Request, res: Response) => {
 export const updateGraph = async (req: Request, res: Response) => {
   const { project, nodes, edges } = req.body;
 
-  console.log('Received updateGraph request:', req.body); // Log des données reçues
+  console.log('Received updateGraph request:', req.body);
 
   if (!project || !nodes || !edges) {
     return res.status(400).json({ message: 'Project, nodes, and edges are required.' });
@@ -50,14 +48,13 @@ export const updateGraph = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Project not found.' });
     }
 
-    // Chemin vers le dossier du projet
     const projectPath = path.join(__dirname, '..', 'projects', project);
 
     // Préparer les opérations bulkWrite pour les nœuds
     const nodeOperations = nodes.map((node: any) => ({
       updateOne: {
         filter: { project: existingProject._id, id: node.id },
-        update: { 
+        update: {
           project: existingProject._id,
           id: node.id || `node_${Date.now()}`,
           type: node.type || 'code',
@@ -79,7 +76,7 @@ export const updateGraph = async (req: Request, res: Response) => {
     const edgeOperations = edges.map((edge: any) => ({
       updateOne: {
         filter: { project: existingProject._id, id: edge.id },
-        update: { 
+        update: {
           project: existingProject._id,
           id: edge.id || `edge_${Date.now()}`,
           source: edge.source || 'unknown_source',
@@ -107,29 +104,38 @@ export const updateGraph = async (req: Request, res: Response) => {
 
     // Valider les arêtes pour s'assurer que les sources et targets existent
     const existingNodeIds = nodes.map((node: any) => node.id);
-    const invalidEdges = edges.filter((edge: any) => 
+    const invalidEdges = edges.filter((edge: any) =>
       !existingNodeIds.includes(edge.source) || !existingNodeIds.includes(edge.target)
     );
 
     if (invalidEdges.length > 0) {
       console.warn('Invalid edges found:', invalidEdges);
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: 'One or more edges have invalid source or target node IDs.',
-        invalidEdges 
+        invalidEdges
       });
     }
 
     // Écrire les fichiers des nœuds dans le système de fichiers
     for (const node of nodes) {
       const filePath = path.join(projectPath, node.data.fileName);
-      fs.writeFileSync(filePath, node.data.code);
+      await fs.writeFile(filePath, node.data.code);
       console.log(`File written: ${filePath}`);
     }
 
-    res.json({ message: 'Graph updated successfully.' });
+    // Récupérer les données mises à jour
+    const updatedNodes = await NodeModel.find({ project: existingProject._id });
+    const updatedEdges = await Edge.find({ project: existingProject._id });
+
+    console.log('Updated graph state:', { nodes: updatedNodes, edges: updatedEdges });
+
+    res.json({
+      message: 'Graph updated successfully.',
+      graph: { nodes: updatedNodes, edges: updatedEdges }
+    });
   } catch (error) {
     console.error('Error updating graph:', error);
-    res.status(500).json({ message: 'Error updating graph.' });
+    res.status(500).json({ message: 'Error updating graph.', error: error.message });
   }
 };
 
@@ -157,10 +163,10 @@ export const deleteNode = async (req: Request, res: Response) => {
     const filePath = path.join(projectPath, nodeToDelete.data.fileName);
 
     // Supprimer le fichier du nœud
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    try {
+      await fs.unlink(filePath);
       console.log(`File deleted: ${filePath}`);
-    } else {
+    } catch (error) {
       console.warn(`File not found for deletion: ${filePath}`);
     }
 
@@ -198,13 +204,13 @@ export const cloneNode = async (req: Request, res: Response) => {
     const clonedNode = nodeToClone.toObject();
     clonedNode.id = newNodeId;
     clonedNode.position = {
-      x: clonedNode.position.x + 100, // Déplacer légèrement la position pour éviter le chevauchement
+      x: clonedNode.position.x + 100,
       y: clonedNode.position.y + 100,
     };
     clonedNode.data = {
       ...clonedNode.data,
-      label: newNodeId || clonedNode.data.fileName || 'Unnamed Node', // Assurer que data.label est présent
-      fileName: newNodeId || clonedNode.data.fileName || 'UnnamedFile.js', // Mettre à jour le nom de fichier
+      label: `${clonedNode.data.label} (Clone)`,
+      fileName: `${clonedNode.data.fileName.split('.').slice(0, -1).join('.')}_clone.${clonedNode.data.fileName.split('.').pop()}`,
     };
     delete clonedNode._id;
 
@@ -213,7 +219,7 @@ export const cloneNode = async (req: Request, res: Response) => {
     const newFilePath = path.join(projectPath, clonedNode.data.fileName);
 
     // Créer et écrire le fichier cloné
-    fs.writeFileSync(newFilePath, clonedNode.data.code);
+    await fs.writeFile(newFilePath, clonedNode.data.code);
     console.log(`Cloned file created: ${newFilePath}`);
 
     const newNode = new NodeModel(clonedNode);

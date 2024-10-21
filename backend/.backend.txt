@@ -1,3 +1,14 @@
+/// my-low-code-app/backend/src/api/axiosInstance.ts
+
+import axios from 'axios';
+
+const axiosInstance = axios.create({
+  baseURL: 'http://localhost:3000', // URL de base de l'API backend
+});
+
+export default axiosInstance;
+
+---------
 /// my-low-code-app/backend/src/context.ts
 
 // backend/src/context.ts
@@ -46,637 +57,1372 @@ export class Context {
 
 
 ---------
-/// my-low-code-app/backend/src/server.ts
+/// my-low-code-app/backend/src/controllers/executeController.ts
 
-// backend/src/server.ts
+// backend/src/controllers/executeController.ts
 
-import express, { Request, Response } from 'express';
-import cors from 'cors';
-import bodyParser from 'body-parser';
-import fs from 'fs';
-import path from 'path';
+import { Request, Response } from 'express';
+import Project from '../models/Project';
+import NodeModel from '../models/Node';
 import { exec } from 'child_process';
-import { Node, ProjectGraph, Edge } from './types';
-import { compileNodes } from './utils';
-import { Context } from './context';
-import { Linter } from 'eslint';
-import ivm from 'isolated-vm';
+import path from 'path';
+import fs from 'fs';
 
-const app = express();
-const PORT = 3000;
-
-// Middleware
-app.use(cors());
-app.use(bodyParser.json());
-
-const PROJECTS_DIR = path.join(__dirname, 'projects');
-
-// Assurer que le répertoire des projets existe
-if (!fs.existsSync(PROJECTS_DIR)) {
-  fs.mkdirSync(PROJECTS_DIR);
-}
-
-// Create initial graph for a project
-function createInitialGraph(): ProjectGraph {
-  return {
-    nodes: [
-      {
-        id: 'initial_node',
-        type: 'code',
-        position: { x: 100, y: 100 },
-        data: {
-          label: 'index.js',
-          fileName: 'index.js',
-          imports: [],
-          code: '// Your code here\nconsole.log("Hello World");',
-          exportedFunctions: []
-        }
-      }
-    ],
-    edges: []
-  };
-}
-
-/**
- * Create a new project
- */
-app.post('/create-project', (req: Request, res: Response) => {
-  const { projectCode, projectName } = req.body;
-
-  if (!projectCode || !projectName) {
-    return res.status(400).json({ message: 'projectCode and projectName are required.' });
-  }
-
-  const projectDirName = `${projectCode}-${projectName}`;
-  const projectPath = path.join(PROJECTS_DIR, projectDirName);
-
-  if (fs.existsSync(projectPath)) {
-    return res.status(400).json({ message: 'Project already exists.' });
-  }
-
-  fs.mkdirSync(projectPath);
-  fs.writeFileSync(path.join(projectPath, 'index.js'), '// Your code here\nconsole.log("Hello World");\n');
-
-  // Create initial graph
-  const initialGraph = createInitialGraph();
-  fs.writeFileSync(path.join(projectPath, 'graph.json'), JSON.stringify(initialGraph, null, 2));
-
-  return res.status(201).json({ message: 'Project created successfully.', projectPath: projectDirName });
-});
-
-/**
- * Get list of projects
- */
-app.get('/projects', (req: Request, res: Response) => {
-  const projects = fs.readdirSync(PROJECTS_DIR);
-  return res.status(200).json(projects);
-});
-
-/**
- * Initialize project graph
- */
-app.post('/init-project-graph', (req: Request, res: Response) => {
-  const { project } = req.body;
-
-  if (!project) {
-    return res.status(400).json({ message: 'Project name is required.' });
-  }
-
-  const projectPath = path.join(PROJECTS_DIR, project);
-  const graphPath = path.join(projectPath, 'graph.json');
-
-  if (!fs.existsSync(projectPath)) {
-    return res.status(404).json({ message: 'Project not found.' });
-  }
-
-  // Create initial graph
-  const initialGraph = createInitialGraph();
-  fs.writeFileSync(graphPath, JSON.stringify(initialGraph, null, 2));
-
-  return res.status(200).json({ message: 'Project graph initialized successfully.', graph: initialGraph });
-});
-
-/**
- * Get file content
- */
-app.get('/file-content', (req: Request, res: Response) => {
-  const { project, file } = req.query;
-
-  if (!project || !file) {
-    return res.status(400).json({ message: 'Project and file are required.' });
-  }
-
-  const filePath = path.join(PROJECTS_DIR, project as string, file as string);
-
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ message: 'File not found.' });
-  }
-
-  const code = fs.readFileSync(filePath, 'utf-8');
-  return res.status(200).json({ code });
-});
-
-/**
- * Update file content and project graph
- */
-app.post('/update-file', (req: Request, res: Response) => {
-  const { project, nodeId, nodeData } = req.body;
-
-  if (!project || !nodeId || !nodeData) {
-    return res.status(400).json({ message: 'Project, nodeId, and nodeData are required.' });
-  }
-
-  const projectPath = path.join(PROJECTS_DIR, project);
-
-  if (!fs.existsSync(projectPath)) {
-    return res.status(404).json({ message: 'Project not found.' });
-  }
-
-  const { fileName, imports, code, position } = nodeData;
-  const filePath = path.join(projectPath, fileName);
-
-  try {
-    // Écrire les imports et le code dans le fichier
-    let fileContent = '';
-    imports.forEach((imp: string) => {
-      fileContent += `${imp}\n`;
-    });
-    fileContent += `\n${code}`;
-
-    fs.writeFileSync(filePath, fileContent);
-
-    // Extraire les fonctions exportées
-    const exportedFunctions = Context.extractExportedFunctions(code);
-
-    // Lint du code
-    const linter = new Linter();
-    const lintConfig = {
-      env: { es6: true, node: true },
-      parserOptions: { ecmaVersion: 2020, sourceType: 'module' },
-      rules: {
-        'no-unused-vars': 'warn',
-        'no-undef': 'error',
-      },
-    };
-    const lintMessages = linter.verify(code, lintConfig as any);
-
-    // Mettre à jour le graph du projet
-    const graphPath = path.join(projectPath, 'graph.json');
-    let graph: ProjectGraph = { nodes: [], edges: [] };
-    if (fs.existsSync(graphPath)) {
-      graph = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
-    }
-
-    const existingNodeIndex = graph.nodes.findIndex(node => node.id === nodeId);
-    const updatedNode: Node = {
-      id: nodeId,
-      type: 'code',
-      position: position,
-      data: {
-        label: fileName,
-        fileName,
-        imports,
-        code,
-        exportedFunctions,
-      },
-    };
-
-    if (existingNodeIndex !== -1) {
-      graph.nodes[existingNodeIndex] = updatedNode;
-    } else {
-      graph.nodes.push(updatedNode);
-    }
-
-    fs.writeFileSync(graphPath, JSON.stringify(graph, null, 2));
-
-    return res.status(200).json({
-      message: 'File and graph updated successfully.',
-      exportedFunctions,
-      lintMessages,
-    });
-  } catch (error) {
-    console.error('Error updating file or graph:', error);
-    return res.status(500).json({ message: 'Error updating file or graph.', error });
-  }
-});
-
-/**
- * Install a package in a project
- */
-app.post('/install-package', (req: Request, res: Response) => {
-  const { project, packageName } = req.body;
-
-  if (!project || !packageName) {
-    return res.status(400).json({ message: 'Project and packageName are required.' });
-  }
-
-  const projectPath = path.join(PROJECTS_DIR, project);
-
-  if (!fs.existsSync(projectPath)) {
-    return res.status(404).json({ message: 'Project not found.' });
-  }
-
-  // Execute 'npm install' for the specified package
-  exec(`npm install ${packageName}`, { cwd: projectPath }, (error: Error | null, stdout: string, stderr: string) => {
-    if (error) {
-      return res.status(500).json({ message: 'Error installing package.', error: error.message, stderr });
-    }
-    return res.status(200).json({ message: 'Package installed successfully.', stdout, stderr });
-  });
-});
-
-/**
- * Execute project code from a specific node using isolated-vm
- */
-app.post('/execute', async (req: Request, res: Response) => {
+export const executeNode = async (req: Request, res: Response) => {
   const { project, nodeId } = req.body;
+
+  console.log('Received executeNode request:', req.body); // Log des données reçues
 
   if (!project || !nodeId) {
     return res.status(400).json({ message: 'Project and nodeId are required.' });
   }
 
-  const projectPath = path.join(PROJECTS_DIR, project);
-  const graphPath = path.join(projectPath, 'graph.json');
-
-  if (!fs.existsSync(graphPath)) {
-    return res.status(404).json({ message: 'Project graph not found.' });
-  }
-
   try {
-    const graph: ProjectGraph = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
-    const compiledCode = compileNodes(graph, nodeId);
+    const existingProject = await Project.findOne({ name: project });
+    if (!existingProject) {
+      console.error(`Project "${project}" not found.`);
+      return res.status(404).json({ message: 'Project not found.' });
+    }
 
-    const isolate = new ivm.Isolate({ memoryLimit: 256 });
-    const context = await isolate.createContext();
+    const node = await NodeModel.findOne({ project: existingProject._id, id: nodeId });
+    if (!node) {
+      console.error(`Node "${nodeId}" not found in project "${project}".`);
+      return res.status(404).json({ message: 'Node not found.' });
+    }
 
-    console.log("ici 1", { compiledCode });
+    // Chemin vers le fichier du nœud
+    const projectPath = path.join(__dirname, '..', 'projects', project);
+    const filePath = path.join(projectPath, node.data.fileName);
 
-    const allowedModules = ['lodash', 'moment']; // Liste des modules autorisés
+    // Vérifier si le fichier existe
+    if (!fs.existsSync(filePath)) {
+      console.error(`File "${filePath}" does not exist.`);
+      return res.status(404).json({ message: 'Node file does not exist.' });
+    }
 
-    // Injecter une fonction require limitée (optionnel et à utiliser avec précaution)
-    await context.global.set('require', new ivm.Reference((moduleName: string) => {
-      if (!allowedModules.includes(moduleName)) {
-        throw new Error(`Module "${moduleName}" is not allowed.`);
+    console.log(`Executing node file: ${filePath}`);
+
+    // Exécuter le fichier en utilisant Node.js
+    exec(`node ${filePath}`, { cwd: projectPath }, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error executing node: ${error.message}`);
+        return res.status(500).json({ message: 'Error executing node.', stderr: error.message });
       }
-      return require(moduleName);
-    }), { copy: true }); // Utiliser copy: false
 
-    let stdout = '';
-    let stderr = '';
+      if (stderr) {
+        console.error(`stderr: ${stderr}`);
+        // Vous pouvez choisir d'envoyer stderr comme partie de la réponse
+      }
 
-    // Configurer console.log et console.error avec copy: false
-    const logRef = new ivm.Reference((...args: any[]) => {
-      stdout += args.map(arg => (typeof arg === 'object' ? JSON.stringify(arg) : String(arg))).join(' ') + '\n';
+      console.log(`stdout: ${stdout}`);
+      res.json({ message: 'Node executed successfully.', stdout, stderr });
     });
-    const errorRef = new ivm.Reference((...args: any[]) => {
-      stderr += args.map(arg => (typeof arg === 'object' ? JSON.stringify(arg) : String(arg))).join(' ') + '\n';
-    });
-
-    await context.global.set('console', {
-      log: logRef,
-      error: errorRef,
-    }, { copy: true }); // Changement ici: copy: false
-
-    // Envelopper le code dans une IIFE async pour gérer les promesses
-    const wrappedCode = `
-      (async () => {
-        try {
-          ${compiledCode}
-          return { success: true, result: "Execution completed successfully" };
-        } catch (error) {
-          console.error(error.toString());
-          return { success: false, error: error.toString() };
-        }
-      })()
-    `;
-
-    // Log du code compilé pour débogage
-    console.log('Compiled Code:', compiledCode);
-    console.log('Wrapped Code:', wrappedCode);
-
-    // Compiler et exécuter le script
-    const script = await isolate.compileScript(wrappedCode);
-    const rawResult = await script.run(context, { timeout: 5000 });
-
-    // Copier le résultat de l'exécution
-    const result = await rawResult.copy();
-
-    // Nettoyage de l'environnement isolé
-    context.release();
-    isolate.dispose();
-
-    return res.status(200).json({
-      result: result.success ? result.result : result.error,
-      stdout,
-      stderr,
-    });
-  } catch (error: any) {
-    console.error('Execution error:', error);
-    return res.status(500).json({
-      message: 'Error compiling or executing code.',
-      error: error.message,
-      stack: error.stack,
-    });
-  }
-});
-
-/**
- * Get project graph
- */
-app.get('/project-graph', (req: Request, res: Response) => {
-  const { project } = req.query;
-
-  if (!project || typeof project !== 'string') {
-    return res.status(400).json({ message: 'Project is required as a query parameter.' });
-  }
-
-  const projectPath = path.join(PROJECTS_DIR, project);
-  const graphPath = path.join(projectPath, 'graph.json');
-
-  if (!fs.existsSync(graphPath)) {
-    const initialGraph = createInitialGraph();
-    fs.writeFileSync(graphPath, JSON.stringify(initialGraph, null, 2));
-    return res.status(200).json({ graph: initialGraph });
-  }
-
-  const graph: ProjectGraph = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
-  return res.status(200).json({ graph });
-});
-
-/**
- * Get accessible exported functions via dependencies
- */
-
-app.get('/accessible-functions', (req: Request, res: Response) => {
-  const { project, nodeId } = req.query;
-
-  if (!project || typeof project !== 'string' || !nodeId || typeof nodeId !== 'string') {
-    return res.status(400).json({ message: 'Project and nodeId are required as query parameters.' });
-  }
-
-  const projectPath = path.join(PROJECTS_DIR, project);
-  const graphPath = path.join(projectPath, 'graph.json');
-
-  if (!fs.existsSync(graphPath)) {
-    return res.status(404).json({ message: 'Project graph not found.' });
-  }
-
-  const graph: ProjectGraph = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
-  const edgesFromNode = graph.edges.filter(edge => edge.source === nodeId);
-  const accessibleFunctions: string[] = [];
-
-  edgesFromNode.forEach(edge => {
-    const targetNode = graph.nodes.find(node => node.id === edge.target);
-    if (targetNode) {
-      accessibleFunctions.push(...targetNode.data.exportedFunctions);
-    }
-  });
-
-  return res.status(200).json({ accessibleFunctions });
-});
-
-/**
- * Delete a node from a project
- */
-app.post('/delete-node', (req: Request, res: Response) => {
-  const { project, nodeId } = req.body;
-
-  if (!project || !nodeId) {
-    return res.status(400).json({ message: 'Project and nodeId are required.' });
-  }
-
-  const projectPath = path.join(PROJECTS_DIR, project);
-  const graphPath = path.join(projectPath, 'graph.json');
-
-  if (!fs.existsSync(graphPath)) {
-    return res.status(404).json({ message: 'Project graph not found.' });
-  }
-
-  try {
-    const graph: ProjectGraph = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
-    graph.nodes = graph.nodes.filter(node => node.id !== nodeId);
-    graph.edges = graph.edges.filter(edge => edge.source !== nodeId && edge.target !== nodeId);
-    fs.writeFileSync(graphPath, JSON.stringify(graph, null, 2));
-
-    const filePath = path.join(projectPath, nodeId);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-
-    return res.status(200).json({ message: 'Node deleted successfully.' });
   } catch (error) {
-    return res.status(500).json({ message: 'Error deleting node.', error });
+    console.error('Error executing node:', error);
+    res.status(500).json({ message: 'Error executing node.' });
   }
-});
+};
 
-/**
- * Clone a node in a project
- */
-app.post('/clone-node', (req: Request, res: Response) => {
-  const { project, nodeId, newNodeId } = req.body;
-
-  if (!project || !nodeId || !newNodeId) {
-    return res.status(400).json({ message: 'Project, nodeId and newNodeId are required.' });
-  }
-
-  const projectPath = path.join(PROJECTS_DIR, project);
-  const graphPath = path.join(projectPath, 'graph.json');
-  if (!fs.existsSync(graphPath)) {
-    return res.status(404).json({ message: 'Project graph not found.' });
-  }
-
-  try {
-    const graph: ProjectGraph = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
-    const nodeToClone = graph.nodes.find(node => node.id === nodeId);
-
-    if (!nodeToClone) {
-      return res.status(404).json({ message: 'Node to clone not found.' });
-    }
-
-    const clonedNode: Node = {
-      ...nodeToClone,
-      id: newNodeId,
-      data: {
-        ...nodeToClone.data,
-        fileName: `clone_${nodeToClone.data.fileName}`,
-      },
-      position: {
-        x: nodeToClone.position.x + 50,
-        y: nodeToClone.position.y + 50,
-      },
-    };
-
-    graph.nodes.push(clonedNode);
-    fs.writeFileSync(graphPath, JSON.stringify(graph, null, 2));
-
-    const originalFilePath = path.join(projectPath, nodeToClone.data.fileName);
-    const clonedFilePath = path.join(projectPath, clonedNode.data.fileName);
-    if (fs.existsSync(originalFilePath)) {
-      fs.copyFileSync(originalFilePath, clonedFilePath);
-    }
-
-    return res.status(200).json({ message: 'Node cloned successfully.', clonedNode });
-  } catch (error) {
-    return res.status(500).json({ message: 'Error cloning node.', error });
-  }
-});
-
-/**
- * Update project graph
- */
-app.post('/update-graph', (req: Request, res: Response) => {
-  const { project, nodes, edges } = req.body;
-
-  if (!project || !nodes || !edges) {
-    return res.status(400).json({ message: 'Project, nodes and edges are required.' });
-  }
-
-  const projectPath = path.join(PROJECTS_DIR, project);
-  const graphPath = path.join(projectPath, 'graph.json');
-
-  if (!fs.existsSync(projectPath)) {
-    return res.status(404).json({ message: 'Project not found.' });
-  }
-
-  try {
-    const updatedGraph: ProjectGraph = { nodes, edges };
-    fs.writeFileSync(graphPath, JSON.stringify(updatedGraph, null, 2));
-    return res.status(200).json({ message: 'Graph updated successfully.' });
-  } catch (error) {
-    return res.status(500).json({ message: 'Error updating graph.', error });
-  }
-});
-
-/**
- * Execute allowed commands in a project
- */
-app.post('/execute-command', (req: Request, res: Response) => {
+export const executeCommand = async (req: Request, res: Response) => {
   const { project, command } = req.body;
 
   if (!project || !command) {
     return res.status(400).json({ message: 'Project and command are required.' });
   }
 
-  const projectPath = path.join(PROJECTS_DIR, project);
-
-  if (!fs.existsSync(projectPath)) {
-    return res.status(404).json({ message: 'Project not found.' });
-  }
-
-  // Sécurité : Valider la commande pour éviter l'exécution de commandes dangereuses
-  const allowedCommands = ['ls', 'npm install', 'npm run build', 'npm run start'];
-  if (!allowedCommands.includes(command)) {
-    return res.status(403).json({ message: 'Command not allowed.' });
-  }
-
-  exec(command, { cwd: projectPath }, (error: Error | null, stdout: string, stderr: string) => {
-    if (error) {
-      return res.status(500).json({ message: 'Error executing command.', error: error.message, stderr });
+  try {
+    const existingProject = await Project.findOne({ name: project });
+    if (!existingProject) {
+      return res.status(404).json({ message: 'Project not found.' });
     }
-    return res.status(200).json({ stdout, stderr });
-  });
-});
 
-/**
- * Endpoint /execute
- */
-app.post('/execute', async (req: Request, res: Response) => {
+    const projectPath = path.join(__dirname, '..', 'projects', project);
+
+    // Sécurité : Valider la commande pour éviter l'exécution de commandes dangereuses
+    const allowedCommands = ['ls', 'npm install', 'npm run build', 'npm run start'];
+    if (!allowedCommands.includes(command)) {
+      return res.status(403).json({ message: 'Command not allowed.' });
+    }
+
+    exec(command, { cwd: projectPath }, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error executing command: ${error.message}`);
+        return res.status(500).json({ message: 'Error executing command.', stderr: error.message });
+      }
+
+      if (stderr) {
+        console.error(`stderr: ${stderr}`);
+        // Vous pouvez choisir d'envoyer stderr comme partie de la réponse
+      }
+
+      console.log(`stdout: ${stdout}`);
+      res.json({ message: 'Command executed successfully.', stdout, stderr });
+    });
+  } catch (error) {
+    console.error('Error executing command:', error);
+    res.status(500).json({ message: 'Error executing command.' });
+  }
+};
+
+---------
+/// my-low-code-app/backend/src/controllers/fileController.ts
+
+// backend/src/controllers/fileController.ts
+
+import { Request, Response } from 'express';
+import Project from '../models/Project';
+import NodeModel from '../models/Node';
+import path from 'path';
+import fs from 'fs';
+
+export const updateFile = async (req: Request, res: Response) => {
+  const { project, nodeId, nodeData } = req.body;
+
+  if (!project || !nodeId || !nodeData) {
+    return res.status(400).json({ message: 'Project, nodeId, and nodeData are required.' });
+  }
+
+  try {
+    const existingProject = await Project.findOne({ name: project });
+    if (!existingProject) {
+      return res.status(404).json({ message: 'Project not found.' });
+    }
+
+    const node = await NodeModel.findOne({ project: existingProject._id, id: nodeId });
+    if (!node) {
+      return res.status(404).json({ message: 'Node not found.' });
+    }
+
+    // Assurer que data.label n'est pas supprimé
+    const updatedData = {
+      ...node.data,
+      ...nodeData,
+      label: nodeData.label || node.data.label, // Préserver ou mettre à jour label
+    };
+
+    // Mettre à jour les données du nœud
+    node.data = updatedData;
+    await node.save();
+
+    // Chemin vers le fichier du nœud
+    const projectPath = path.join(__dirname, '..', 'projects', project);
+    const filePath = path.join(projectPath, node.data.fileName);
+
+    // Écrire le code mis à jour dans le fichier
+    fs.writeFileSync(filePath, node.data.code);
+    console.log(`File updated: ${filePath}`);
+
+    res.json({ message: 'File updated successfully.', node });
+  } catch (error) {
+    console.error('Error updating file:', error);
+    res.status(500).json({ message: 'Error updating file.' });
+  }
+};
+
+export const getAccessibleFunctions = async (req: Request, res: Response) => {
+  const { project, nodeId } = req.query;
+
+  if (!project || typeof project !== 'string' || !nodeId || typeof nodeId !== 'string') {
+    return res.status(400).json({ message: 'Project and nodeId are required and must be strings.' });
+  }
+
+  try {
+    const existingProject = await Project.findOne({ name: project });
+    if (!existingProject) {
+      return res.status(404).json({ message: 'Project not found.' });
+    }
+
+    const node = await NodeModel.findOne({ project: existingProject._id, id: nodeId });
+    if (!node) {
+      return res.status(404).json({ message: 'Node not found.' });
+    }
+
+    // Logique pour déterminer les fonctions accessibles
+    // Remplacez ceci par votre logique métier réelle
+    const accessibleFunctions = ['functionA', 'functionB', 'functionC'];
+
+    res.json({ accessibleFunctions });
+  } catch (error) {
+    console.error('Error fetching accessible functions:', error);
+    res.status(500).json({ message: 'Error fetching accessible functions.' });
+  }
+};
+
+---------
+/// my-low-code-app/backend/src/controllers/graphController.ts
+
+// backend/src/controllers/graphController.ts
+
+import { Request, Response } from 'express';
+import Project from '../models/Project';
+import NodeModel from '../models/Node';
+import Edge from '../models/Edge';
+import path from 'path';
+import fs from 'fs';
+
+export const getProjectGraph = async (req: Request, res: Response) => {
+  const { project } = req.query;
+
+  if (!project || typeof project !== 'string') {
+    return res.status(400).json({ message: 'Project is required and must be a string.' });
+  }
+
+  try {
+    const existingProject = await Project.findOne({ name: project });
+    if (!existingProject) {
+      return res.status(404).json({ message: 'Project not found.' });
+    }
+
+    const nodes = await NodeModel.find({ project: existingProject._id });
+    const edges = await Edge.find({ project: existingProject._id });
+
+    res.json({ graph: { nodes, edges } });
+  } catch (error) {
+    console.error('Error fetching project graph:', error);
+    res.status(500).json({ message: 'Error fetching project graph.' });
+  }
+};
+
+export const updateGraph = async (req: Request, res: Response) => {
+  const { project, nodes, edges } = req.body;
+
+  console.log('Received updateGraph request:', req.body); // Log des données reçues
+
+  if (!project || !nodes || !edges) {
+    return res.status(400).json({ message: 'Project, nodes, and edges are required.' });
+  }
+
+  if (typeof project !== 'string' || !Array.isArray(nodes) || !Array.isArray(edges)) {
+    return res.status(400).json({ message: 'Invalid data types for project, nodes, or edges.' });
+  }
+
+  try {
+    const existingProject = await Project.findOne({ name: project });
+    if (!existingProject) {
+      console.error(`Project "${project}" not found.`);
+      return res.status(404).json({ message: 'Project not found.' });
+    }
+
+    // Chemin vers le dossier du projet
+    const projectPath = path.join(__dirname, '..', 'projects', project);
+
+    // Préparer les opérations bulkWrite pour les nœuds
+    const nodeOperations = nodes.map((node: any) => ({
+      updateOne: {
+        filter: { project: existingProject._id, id: node.id },
+        update: { 
+          project: existingProject._id,
+          id: node.id || `node_${Date.now()}`,
+          type: node.type || 'code',
+          position: node.position || { x: 0, y: 0 },
+          data: {
+            label: node.data.label || node.data.fileName || 'Unnamed Node',
+            fileName: node.data.fileName || 'UnnamedFile.js',
+            imports: node.data.imports || [],
+            code: node.data.code || '// No code provided',
+            exportedFunctions: node.data.exportedFunctions || [],
+            lintErrors: node.data.lintErrors || [],
+          },
+        },
+        upsert: true,
+      },
+    }));
+
+    // Préparer les opérations bulkWrite pour les arêtes
+    const edgeOperations = edges.map((edge: any) => ({
+      updateOne: {
+        filter: { project: existingProject._id, id: edge.id },
+        update: { 
+          project: existingProject._id,
+          id: edge.id || `edge_${Date.now()}`,
+          source: edge.source || 'unknown_source',
+          target: edge.target || 'unknown_target',
+          animated: edge.animated || false,
+          style: edge.style || {},
+        },
+        upsert: true,
+      },
+    }));
+
+    console.log('Prepared node operations:', nodeOperations);
+    console.log('Prepared edge operations:', edgeOperations);
+
+    // Exécuter les opérations bulkWrite
+    if (nodeOperations.length > 0) {
+      await NodeModel.bulkWrite(nodeOperations);
+      console.log('Nodes upserted successfully.');
+    }
+
+    if (edgeOperations.length > 0) {
+      await Edge.bulkWrite(edgeOperations);
+      console.log('Edges upserted successfully.');
+    }
+
+    // Valider les arêtes pour s'assurer que les sources et targets existent
+    const existingNodeIds = nodes.map((node: any) => node.id);
+    const invalidEdges = edges.filter((edge: any) => 
+      !existingNodeIds.includes(edge.source) || !existingNodeIds.includes(edge.target)
+    );
+
+    if (invalidEdges.length > 0) {
+      console.warn('Invalid edges found:', invalidEdges);
+      return res.status(400).json({ 
+        message: 'One or more edges have invalid source or target node IDs.',
+        invalidEdges 
+      });
+    }
+
+    // Écrire les fichiers des nœuds dans le système de fichiers
+    for (const node of nodes) {
+      const filePath = path.join(projectPath, node.data.fileName);
+      fs.writeFileSync(filePath, node.data.code);
+      console.log(`File written: ${filePath}`);
+    }
+
+    res.json({ message: 'Graph updated successfully.' });
+  } catch (error) {
+    console.error('Error updating graph:', error);
+    res.status(500).json({ message: 'Error updating graph.' });
+  }
+};
+
+export const deleteNode = async (req: Request, res: Response) => {
   const { project, nodeId } = req.body;
 
   if (!project || !nodeId) {
     return res.status(400).json({ message: 'Project and nodeId are required.' });
   }
 
-  const projectPath = path.join(PROJECTS_DIR, project);
-  const graphPath = path.join(projectPath, 'graph.json');
+  try {
+    const existingProject = await Project.findOne({ name: project });
+    if (!existingProject) {
+      return res.status(404).json({ message: 'Project not found.' });
+    }
 
-  if (!fs.existsSync(graphPath)) {
-    return res.status(404).json({ message: 'Project graph not found.' });
+    // Trouver le nœud à supprimer
+    const nodeToDelete = await NodeModel.findOne({ project: existingProject._id, id: nodeId });
+    if (!nodeToDelete) {
+      return res.status(404).json({ message: 'Node not found.' });
+    }
+
+    // Chemin vers le dossier du projet
+    const projectPath = path.join(__dirname, '..', 'projects', project);
+    const filePath = path.join(projectPath, nodeToDelete.data.fileName);
+
+    // Supprimer le fichier du nœud
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log(`File deleted: ${filePath}`);
+    } else {
+      console.warn(`File not found for deletion: ${filePath}`);
+    }
+
+    // Supprimer le nœud
+    await NodeModel.deleteOne({ project: existingProject._id, id: nodeId });
+
+    // Supprimer les arêtes associées
+    await Edge.deleteMany({ project: existingProject._id, $or: [{ source: nodeId }, { target: nodeId }] });
+
+    res.json({ message: 'Node and associated edges deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting node:', error);
+    res.status(500).json({ message: 'Error deleting node.' });
+  }
+};
+
+export const cloneNode = async (req: Request, res: Response) => {
+  const { project, nodeId, newNodeId } = req.body;
+
+  if (!project || !nodeId || !newNodeId) {
+    return res.status(400).json({ message: 'Project, nodeId, and newNodeId are required.' });
   }
 
   try {
-    const graph: ProjectGraph = JSON.parse(fs.readFileSync(graphPath, 'utf-8'));
-    const compiledCode = compileNodes(graph, nodeId);
+    const existingProject = await Project.findOne({ name: project });
+    if (!existingProject) {
+      return res.status(404).json({ message: 'Project not found.' });
+    }
 
-    const isolate = new ivm.Isolate({ memoryLimit: 256 });
-    const context = await isolate.createContext();
+    const nodeToClone = await NodeModel.findOne({ project: existingProject._id, id: nodeId });
+    if (!nodeToClone) {
+      return res.status(404).json({ message: 'Node to clone not found.' });
+    }
 
-    console.log("ici 1", { compiledCode });
+    const clonedNode = nodeToClone.toObject();
+    clonedNode.id = newNodeId;
+    clonedNode.position = {
+      x: clonedNode.position.x + 100, // Déplacer légèrement la position pour éviter le chevauchement
+      y: clonedNode.position.y + 100,
+    };
+    clonedNode.data = {
+      ...clonedNode.data,
+      label: newNodeId || clonedNode.data.fileName || 'Unnamed Node', // Assurer que data.label est présent
+      fileName: newNodeId || clonedNode.data.fileName || 'UnnamedFile.js', // Mettre à jour le nom de fichier
+    };
+    delete clonedNode._id;
 
-    const allowedModules = ['lodash', 'moment']; // Liste des modules autorisés
+    // Chemin vers le dossier du projet
+    const projectPath = path.join(__dirname, '..', 'projects', project);
+    const newFilePath = path.join(projectPath, clonedNode.data.fileName);
 
-    // Injecter une fonction require limitée (optionnel et à utiliser avec précaution)
-    await context.global.set('require', new ivm.Reference((moduleName: string) => {
-      if (!allowedModules.includes(moduleName)) {
-        throw new Error(`Module "${moduleName}" is not allowed.`);
-      }
-      return require(moduleName);
-    }), { copy: true }); // Utiliser copy: false
+    // Créer et écrire le fichier cloné
+    fs.writeFileSync(newFilePath, clonedNode.data.code);
+    console.log(`Cloned file created: ${newFilePath}`);
 
-    let stdout = '';
-    let stderr = '';
+    const newNode = new NodeModel(clonedNode);
+    await newNode.save();
 
-    // Configurer console.log et console.error avec copy: false
-    const logRef = new ivm.Reference((...args: any[]) => {
-      stdout += args.map(arg => (typeof arg === 'object' ? JSON.stringify(arg) : String(arg))).join(' ') + '\n';
-    });
-    const errorRef = new ivm.Reference((...args: any[]) => {
-      stderr += args.map(arg => (typeof arg === 'object' ? JSON.stringify(arg) : String(arg))).join(' ') + '\n';
-    });
-
-    await context.global.set('console', {
-      log: logRef,
-      error: errorRef,
-    }, { copy: true }); // Changement ici: copy: false
-
-    // Envelopper le code dans une IIFE async pour gérer les promesses
-    const wrappedCode = `
-      (async () => {
-        try {
-          ${compiledCode}
-          return { success: true, result: "Execution completed successfully" };
-        } catch (error) {
-          console.error(error.toString());
-          return { success: false, error: error.toString() };
-        }
-      })()
-    `;
-
-    // Log du code compilé pour débogage
-    console.log('Compiled Code:', compiledCode);
-    console.log('Wrapped Code:', wrappedCode);
-
-    // Compiler et exécuter le script
-    const script = await isolate.compileScript(wrappedCode);
-    const rawResult = await script.run(context, { timeout: 5000 });
-
-    // Copier le résultat de l'exécution
-    const result = await rawResult.copy();
-
-    // Nettoyage de l'environnement isolé
-    context.release();
-    isolate.dispose();
-
-    return res.status(200).json({
-      result: result.success ? result.result : result.error,
-      stdout,
-      stderr,
-    });
-  } catch (error: any) {
-    console.error('Execution error:', error);
-    return res.status(500).json({
-      message: 'Error compiling or executing code.',
-      error: error.message,
-      stack: error.stack,
-    });
+    res.json({ message: 'Node cloned successfully.', clonedNode: newNode });
+  } catch (error) {
+    console.error('Error cloning node:', error);
+    res.status(500).json({ message: 'Error cloning node.' });
   }
+};
+
+---------
+/// my-low-code-app/backend/src/controllers/projectController.ts
+
+// backend/src/controllers/projectController.ts
+
+import { Request, Response } from 'express';
+import Project from '../models/Project';
+import { exec } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import Joi from 'joi';
+
+export const getProjects = async (req: Request, res: Response) => {
+  try {
+    const projects = await Project.find().select('name code createdAt');
+    res.json(projects);
+  } catch (error) {
+    console.error('Error fetching projects:', error);
+    res.status(500).json({ message: 'Erreur lors de la récupération des projets.' });
+  }
+};
+
+export const createProject = async (req: Request, res: Response) => {
+  const schema = Joi.object({
+    projectCode: Joi.string().required(),
+    projectName: Joi.string().alphanum().min(3).max(30).required(),
+  });
+
+  const { error } = schema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message });
+  }
+
+  const { projectCode, projectName } = req.body;
+
+  try {
+    // Vérifier si le projet existe déjà
+    const existingProject = await Project.findOne({ name: projectName });
+    if (existingProject) {
+      return res.status(400).json({ message: 'Le projet existe déjà.' });
+    }
+
+    // Créer le dossier du projet
+    const projectPath = path.join(__dirname, '..', 'projects', projectName);
+    if (!fs.existsSync(projectPath)) {
+      fs.mkdirSync(projectPath, { recursive: true });
+      console.log(`Project directory created at: ${projectPath}`);
+    }
+
+    // Créer le fichier principal (par exemple, index.ts)
+    const mainFilePath = path.join(projectPath, 'index.ts');
+    fs.writeFileSync(mainFilePath, projectCode);
+    console.log(`Main file created at: ${mainFilePath}`);
+
+    // Initialiser un package.json
+    exec('npm init -y', { cwd: projectPath }, async (err, stdout, stderr) => {
+      if (err) {
+        console.error('Error initializing npm:', err);
+        return res.status(500).json({ message: 'Erreur lors de l\'initialisation du projet.' });
+      }
+
+      console.log(`npm initialized for project "${projectName}".`);
+
+      try {
+        // Enregistrer le projet dans la base de données
+        const newProject = new Project({
+          name: projectName,
+          code: projectCode,
+        });
+
+        const savedProject = await newProject.save();
+        console.log(`Project "${projectName}" saved to database.`);
+
+        res.status(201).json({ message: 'Projet créé avec succès.', project: savedProject });
+      } catch (saveError) {
+        console.error('Error saving project:', saveError);
+        res.status(500).json({ message: 'Erreur lors de la création du projet.' });
+      }
+    });
+
+  } catch (error) {
+    console.error('Error creating project:', error);
+    res.status(500).json({ message: 'Erreur lors de la création du projet.' });
+  }
+};
+
+export const installPackage = async (req: Request, res: Response) => {
+  const schema = Joi.object({
+    project: Joi.string().required(),
+    packageName: Joi.string().required(),
+  });
+
+  const { error } = schema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message });
+  }
+
+  const { project, packageName } = req.body;
+
+  try {
+    // Trouver le projet dans la base de données
+    const existingProject = await Project.findOne({ name: project });
+    if (!existingProject) {
+      return res.status(404).json({ message: 'Projet non trouvé.' });
+    }
+
+    const projectPath = path.join(__dirname, '..', 'projects', project);
+
+    // Vérifier si le dossier du projet existe
+    if (!fs.existsSync(projectPath)) {
+      return res.status(400).json({ message: 'Le dossier du projet n\'existe pas.' });
+    }
+
+    console.log(`Installing package "${packageName}" in project "${project}".`);
+
+    // Exécuter la commande npm install
+    exec(`npm install ${packageName}`, { cwd: projectPath }, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error installing package: ${error.message}`);
+        return res.status(500).json({ message: 'Erreur lors de l\'installation du package.', stderr: error.message });
+      }
+
+      if (stderr) {
+        console.error(`stderr: ${stderr}`);
+        // Vous pouvez choisir d'envoyer stderr comme partie de la réponse
+      }
+
+      console.log(`stdout: ${stdout}`);
+      res.json({ message: `Package ${packageName} installé avec succès.`, stdout, stderr });
+    });
+  } catch (error) {
+    console.error('Error installing package:', error);
+    res.status(500).json({ message: 'Erreur lors de l\'installation du package.' });
+  }
+};
+
+---------
+/// my-low-code-app/backend/src/models/Edge.ts
+
+// backend/src/models/Edge.ts
+
+import mongoose, { Document, Schema } from 'mongoose';
+
+export interface IEdge extends Document {
+  project: mongoose.Types.ObjectId;
+  id: string; // ID unique de l'arête
+  source: string; // ID source du nœud
+  target: string; // ID cible du nœud
+  animated?: boolean;
+  style?: Record<string, any>;
+}
+
+const EdgeSchema: Schema = new Schema({
+  project: { type: Schema.Types.ObjectId, ref: 'Project', required: true },
+  id: { type: String, required: true }, // ID unique de l'arête
+  source: { type: String, required: true }, // ID source du nœud
+  target: { type: String, required: true }, // ID cible du nœud
+  animated: { type: Boolean, default: false },
+  style: { type: Object, default: {} },
 });
 
-// Démarrer le serveur
-app.listen(PORT, () => {
-  console.log(`Backend server running on http://localhost:${PORT}`);
+export default mongoose.model<IEdge>('Edge', EdgeSchema);
+
+---------
+/// my-low-code-app/backend/src/models/Node.ts
+
+// backend/src/models/Node.ts
+
+import mongoose, { Document, Schema } from 'mongoose';
+
+export interface INodeData {
+  label: string;
+  fileName: string;
+  imports: string[];
+  code: string;
+  exportedFunctions: string[];
+  lintErrors?: any[];
+}
+
+export interface INode extends Document {
+  project: mongoose.Types.ObjectId;
+  id: string; // ID unique du nœud dans le graph
+  type: string;
+  position: {
+    x: number;
+    y: number;
+  };
+  data: INodeData;
+}
+
+const NodeSchema: Schema = new Schema({
+  project: { type: Schema.Types.ObjectId, ref: 'Project', required: true },
+  id: { type: String, required: true }, // ID unique du nœud dans le graph
+  type: { type: String, required: true },
+  position: {
+    x: { type: Number, required: true, default: 0 },
+    y: { type: Number, required: true, default: 0 },
+  },
+  data: {
+    label: { type: String, required: true, default: 'Unnamed Node' }, // Valeur par défaut ajoutée
+    fileName: { type: String, required: true, default: 'UnnamedFile.js' }, // Valeur par défaut ajoutée
+    imports: { type: [String], default: [] },
+    code: { type: String, required: true, default: '// No code provided' }, // Valeur par défaut ajoutée
+    exportedFunctions: { type: [String], default: [] },
+    lintErrors: { type: [Schema.Types.Mixed], default: [] },
+  },
 });
 
+export default mongoose.model<INode>('Node', NodeSchema);
+
+---------
+/// my-low-code-app/backend/src/models/Project.ts
+
+// backend/src/models/Project.ts
+
+import mongoose, { Document, Schema } from 'mongoose';
+
+export interface IProject extends Document {
+  name: string;
+  code: string;
+  createdAt: Date;
+}
+
+const ProjectSchema: Schema = new Schema({
+  name: { type: String, required: true, unique: true },
+  code: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
+});
+
+export default mongoose.model<IProject>('Project', ProjectSchema);
+
+---------
+/// my-low-code-app/backend/src/projects/cheik/index.ts
+
+test
+
+---------
+/// my-low-code-app/backend/src/projects/nouveautest/index.ts
+
+naruto
+
+---------
+/// my-low-code-app/backend/src/projects/test/index.ts
+
+test
+
+---------
+/// my-low-code-app/backend/src/projects/test/node_modules/axios/index.d.ts
+
+// TypeScript Version: 4.7
+export type AxiosHeaderValue = AxiosHeaders | string | string[] | number | boolean | null;
+
+interface RawAxiosHeaders {
+  [key: string]: AxiosHeaderValue;
+}
+
+type MethodsHeaders = Partial<{
+  [Key in Method as Lowercase<Key>]: AxiosHeaders;
+} & {common: AxiosHeaders}>;
+
+type AxiosHeaderMatcher = string | RegExp | ((this: AxiosHeaders, value: string, name: string) => boolean);
+
+type AxiosHeaderParser = (this: AxiosHeaders, value: AxiosHeaderValue, header: string) => any;
+
+export class AxiosHeaders {
+  constructor(
+      headers?: RawAxiosHeaders | AxiosHeaders | string
+  );
+
+  [key: string]: any;
+
+  set(headerName?: string, value?: AxiosHeaderValue, rewrite?: boolean | AxiosHeaderMatcher): AxiosHeaders;
+  set(headers?: RawAxiosHeaders | AxiosHeaders | string, rewrite?: boolean): AxiosHeaders;
+
+  get(headerName: string, parser: RegExp): RegExpExecArray | null;
+  get(headerName: string, matcher?: true | AxiosHeaderParser): AxiosHeaderValue;
+
+  has(header: string, matcher?: AxiosHeaderMatcher): boolean;
+
+  delete(header: string | string[], matcher?: AxiosHeaderMatcher): boolean;
+
+  clear(matcher?: AxiosHeaderMatcher): boolean;
+
+  normalize(format: boolean): AxiosHeaders;
+
+  concat(...targets: Array<AxiosHeaders | RawAxiosHeaders | string | undefined | null>): AxiosHeaders;
+
+  toJSON(asStrings?: boolean): RawAxiosHeaders;
+
+  static from(thing?: AxiosHeaders | RawAxiosHeaders | string): AxiosHeaders;
+
+  static accessor(header: string | string[]): AxiosHeaders;
+
+  static concat(...targets: Array<AxiosHeaders | RawAxiosHeaders | string | undefined | null>): AxiosHeaders;
+
+  setContentType(value: ContentType, rewrite?: boolean | AxiosHeaderMatcher): AxiosHeaders;
+  getContentType(parser?: RegExp): RegExpExecArray | null;
+  getContentType(matcher?: AxiosHeaderMatcher): AxiosHeaderValue;
+  hasContentType(matcher?: AxiosHeaderMatcher): boolean;
+
+  setContentLength(value: AxiosHeaderValue, rewrite?: boolean | AxiosHeaderMatcher): AxiosHeaders;
+  getContentLength(parser?: RegExp): RegExpExecArray | null;
+  getContentLength(matcher?: AxiosHeaderMatcher): AxiosHeaderValue;
+  hasContentLength(matcher?: AxiosHeaderMatcher): boolean;
+
+  setAccept(value: AxiosHeaderValue, rewrite?: boolean | AxiosHeaderMatcher): AxiosHeaders;
+  getAccept(parser?: RegExp): RegExpExecArray | null;
+  getAccept(matcher?: AxiosHeaderMatcher): AxiosHeaderValue;
+  hasAccept(matcher?: AxiosHeaderMatcher): boolean;
+
+  setUserAgent(value: AxiosHeaderValue, rewrite?: boolean | AxiosHeaderMatcher): AxiosHeaders;
+  getUserAgent(parser?: RegExp): RegExpExecArray | null;
+  getUserAgent(matcher?: AxiosHeaderMatcher): AxiosHeaderValue;
+  hasUserAgent(matcher?: AxiosHeaderMatcher): boolean;
+
+  setContentEncoding(value: AxiosHeaderValue, rewrite?: boolean | AxiosHeaderMatcher): AxiosHeaders;
+  getContentEncoding(parser?: RegExp): RegExpExecArray | null;
+  getContentEncoding(matcher?: AxiosHeaderMatcher): AxiosHeaderValue;
+  hasContentEncoding(matcher?: AxiosHeaderMatcher): boolean;
+
+  setAuthorization(value: AxiosHeaderValue, rewrite?: boolean | AxiosHeaderMatcher): AxiosHeaders;
+  getAuthorization(parser?: RegExp): RegExpExecArray | null;
+  getAuthorization(matcher?: AxiosHeaderMatcher): AxiosHeaderValue;
+  hasAuthorization(matcher?: AxiosHeaderMatcher): boolean;
+
+  [Symbol.iterator](): IterableIterator<[string, AxiosHeaderValue]>;
+}
+
+type CommonRequestHeadersList = 'Accept' | 'Content-Length' | 'User-Agent' | 'Content-Encoding' | 'Authorization';
+
+type ContentType = AxiosHeaderValue | 'text/html' | 'text/plain' | 'multipart/form-data' | 'application/json' | 'application/x-www-form-urlencoded' | 'application/octet-stream';
+
+export type RawAxiosRequestHeaders = Partial<RawAxiosHeaders & {
+  [Key in CommonRequestHeadersList]: AxiosHeaderValue;
+} & {
+  'Content-Type': ContentType
+}>;
+
+export type AxiosRequestHeaders = RawAxiosRequestHeaders & AxiosHeaders;
+
+type CommonResponseHeadersList = 'Server' | 'Content-Type' | 'Content-Length' | 'Cache-Control'| 'Content-Encoding';
+
+type RawCommonResponseHeaders = {
+  [Key in CommonResponseHeadersList]: AxiosHeaderValue;
+} & {
+  "set-cookie": string[];
+};
+
+export type RawAxiosResponseHeaders = Partial<RawAxiosHeaders & RawCommonResponseHeaders>;
+
+export type AxiosResponseHeaders = RawAxiosResponseHeaders & AxiosHeaders;
+
+export interface AxiosRequestTransformer {
+  (this: InternalAxiosRequestConfig, data: any, headers: AxiosRequestHeaders): any;
+}
+
+export interface AxiosResponseTransformer {
+  (this: InternalAxiosRequestConfig, data: any, headers: AxiosResponseHeaders, status?: number): any;
+}
+
+export interface AxiosAdapter {
+  (config: InternalAxiosRequestConfig): AxiosPromise;
+}
+
+export interface AxiosBasicCredentials {
+  username: string;
+  password: string;
+}
+
+export interface AxiosProxyConfig {
+  host: string;
+  port: number;
+  auth?: AxiosBasicCredentials;
+  protocol?: string;
+}
+
+export enum HttpStatusCode {
+  Continue = 100,
+  SwitchingProtocols = 101,
+  Processing = 102,
+  EarlyHints = 103,
+  Ok = 200,
+  Created = 201,
+  Accepted = 202,
+  NonAuthoritativeInformation = 203,
+  NoContent = 204,
+  ResetContent = 205,
+  PartialContent = 206,
+  MultiStatus = 207,
+  AlreadyReported = 208,
+  ImUsed = 226,
+  MultipleChoices = 300,
+  MovedPermanently = 301,
+  Found = 302,
+  SeeOther = 303,
+  NotModified = 304,
+  UseProxy = 305,
+  Unused = 306,
+  TemporaryRedirect = 307,
+  PermanentRedirect = 308,
+  BadRequest = 400,
+  Unauthorized = 401,
+  PaymentRequired = 402,
+  Forbidden = 403,
+  NotFound = 404,
+  MethodNotAllowed = 405,
+  NotAcceptable = 406,
+  ProxyAuthenticationRequired = 407,
+  RequestTimeout = 408,
+  Conflict = 409,
+  Gone = 410,
+  LengthRequired = 411,
+  PreconditionFailed = 412,
+  PayloadTooLarge = 413,
+  UriTooLong = 414,
+  UnsupportedMediaType = 415,
+  RangeNotSatisfiable = 416,
+  ExpectationFailed = 417,
+  ImATeapot = 418,
+  MisdirectedRequest = 421,
+  UnprocessableEntity = 422,
+  Locked = 423,
+  FailedDependency = 424,
+  TooEarly = 425,
+  UpgradeRequired = 426,
+  PreconditionRequired = 428,
+  TooManyRequests = 429,
+  RequestHeaderFieldsTooLarge = 431,
+  UnavailableForLegalReasons = 451,
+  InternalServerError = 500,
+  NotImplemented = 501,
+  BadGateway = 502,
+  ServiceUnavailable = 503,
+  GatewayTimeout = 504,
+  HttpVersionNotSupported = 505,
+  VariantAlsoNegotiates = 506,
+  InsufficientStorage = 507,
+  LoopDetected = 508,
+  NotExtended = 510,
+  NetworkAuthenticationRequired = 511,
+}
+
+export type Method =
+    | 'get' | 'GET'
+    | 'delete' | 'DELETE'
+    | 'head' | 'HEAD'
+    | 'options' | 'OPTIONS'
+    | 'post' | 'POST'
+    | 'put' | 'PUT'
+    | 'patch' | 'PATCH'
+    | 'purge' | 'PURGE'
+    | 'link' | 'LINK'
+    | 'unlink' | 'UNLINK';
+
+export type ResponseType =
+    | 'arraybuffer'
+    | 'blob'
+    | 'document'
+    | 'json'
+    | 'text'
+    | 'stream'
+    | 'formdata';
+
+export type responseEncoding =
+    | 'ascii' | 'ASCII'
+    | 'ansi' | 'ANSI'
+    | 'binary' | 'BINARY'
+    | 'base64' | 'BASE64'
+    | 'base64url' | 'BASE64URL'
+    | 'hex' | 'HEX'
+    | 'latin1' | 'LATIN1'
+    | 'ucs-2' | 'UCS-2'
+    | 'ucs2' | 'UCS2'
+    | 'utf-8' | 'UTF-8'
+    | 'utf8' | 'UTF8'
+    | 'utf16le' | 'UTF16LE';
+
+export interface TransitionalOptions {
+  silentJSONParsing?: boolean;
+  forcedJSONParsing?: boolean;
+  clarifyTimeoutError?: boolean;
+}
+
+export interface GenericAbortSignal {
+  readonly aborted: boolean;
+  onabort?: ((...args: any) => any) | null;
+  addEventListener?: (...args: any) => any;
+  removeEventListener?: (...args: any) => any;
+}
+
+export interface FormDataVisitorHelpers {
+  defaultVisitor: SerializerVisitor;
+  convertValue: (value: any) => any;
+  isVisitable: (value: any) => boolean;
+}
+
+export interface SerializerVisitor {
+  (
+      this: GenericFormData,
+      value: any,
+      key: string | number,
+      path: null | Array<string | number>,
+      helpers: FormDataVisitorHelpers
+  ): boolean;
+}
+
+export interface SerializerOptions {
+  visitor?: SerializerVisitor;
+  dots?: boolean;
+  metaTokens?: boolean;
+  indexes?: boolean | null;
+}
+
+// tslint:disable-next-line
+export interface FormSerializerOptions extends SerializerOptions {
+}
+
+export interface ParamEncoder {
+  (value: any, defaultEncoder: (value: any) => any): any;
+}
+
+export interface CustomParamsSerializer {
+  (params: Record<string, any>, options?: ParamsSerializerOptions): string;
+}
+
+export interface ParamsSerializerOptions extends SerializerOptions {
+  encode?: ParamEncoder;
+  serialize?: CustomParamsSerializer;
+}
+
+type MaxUploadRate = number;
+
+type MaxDownloadRate = number;
+
+type BrowserProgressEvent = any;
+
+export interface AxiosProgressEvent {
+  loaded: number;
+  total?: number;
+  progress?: number;
+  bytes: number;
+  rate?: number;
+  estimated?: number;
+  upload?: boolean;
+  download?: boolean;
+  event?: BrowserProgressEvent;
+  lengthComputable: boolean;
+}
+
+type Milliseconds = number;
+
+type AxiosAdapterName = 'fetch' | 'xhr' | 'http' | string;
+
+type AxiosAdapterConfig = AxiosAdapter | AxiosAdapterName;
+
+export type AddressFamily = 4 | 6 | undefined;
+
+export interface LookupAddressEntry {
+  address: string;
+  family?: AddressFamily;
+}
+
+export type LookupAddress = string | LookupAddressEntry;
+
+export interface AxiosRequestConfig<D = any> {
+  url?: string;
+  method?: Method | string;
+  baseURL?: string;
+  transformRequest?: AxiosRequestTransformer | AxiosRequestTransformer[];
+  transformResponse?: AxiosResponseTransformer | AxiosResponseTransformer[];
+  headers?: (RawAxiosRequestHeaders & MethodsHeaders) | AxiosHeaders;
+  params?: any;
+  paramsSerializer?: ParamsSerializerOptions | CustomParamsSerializer;
+  data?: D;
+  timeout?: Milliseconds;
+  timeoutErrorMessage?: string;
+  withCredentials?: boolean;
+  adapter?: AxiosAdapterConfig | AxiosAdapterConfig[];
+  auth?: AxiosBasicCredentials;
+  responseType?: ResponseType;
+  responseEncoding?: responseEncoding | string;
+  xsrfCookieName?: string;
+  xsrfHeaderName?: string;
+  onUploadProgress?: (progressEvent: AxiosProgressEvent) => void;
+  onDownloadProgress?: (progressEvent: AxiosProgressEvent) => void;
+  maxContentLength?: number;
+  validateStatus?: ((status: number) => boolean) | null;
+  maxBodyLength?: number;
+  maxRedirects?: number;
+  maxRate?: number | [MaxUploadRate, MaxDownloadRate];
+  beforeRedirect?: (options: Record<string, any>, responseDetails: {headers: Record<string, string>, statusCode: HttpStatusCode}) => void;
+  socketPath?: string | null;
+  transport?: any;
+  httpAgent?: any;
+  httpsAgent?: any;
+  proxy?: AxiosProxyConfig | false;
+  cancelToken?: CancelToken;
+  decompress?: boolean;
+  transitional?: TransitionalOptions;
+  signal?: GenericAbortSignal;
+  insecureHTTPParser?: boolean;
+  env?: {
+    FormData?: new (...args: any[]) => object;
+  };
+  formSerializer?: FormSerializerOptions;
+  family?: AddressFamily;
+  lookup?: ((hostname: string, options: object, cb: (err: Error | null, address: LookupAddress | LookupAddress[], family?: AddressFamily) => void) => void) |
+      ((hostname: string, options: object) => Promise<[address: LookupAddressEntry | LookupAddressEntry[], family?: AddressFamily] | LookupAddress>);
+  withXSRFToken?: boolean | ((config: InternalAxiosRequestConfig) => boolean | undefined);
+  fetchOptions?: Record<string, any>;
+}
+
+// Alias
+export type RawAxiosRequestConfig<D = any> = AxiosRequestConfig<D>;
+
+export interface InternalAxiosRequestConfig<D = any> extends AxiosRequestConfig<D> {
+  headers: AxiosRequestHeaders;
+}
+
+export interface HeadersDefaults {
+  common: RawAxiosRequestHeaders;
+  delete: RawAxiosRequestHeaders;
+  get: RawAxiosRequestHeaders;
+  head: RawAxiosRequestHeaders;
+  post: RawAxiosRequestHeaders;
+  put: RawAxiosRequestHeaders;
+  patch: RawAxiosRequestHeaders;
+  options?: RawAxiosRequestHeaders;
+  purge?: RawAxiosRequestHeaders;
+  link?: RawAxiosRequestHeaders;
+  unlink?: RawAxiosRequestHeaders;
+}
+
+export interface AxiosDefaults<D = any> extends Omit<AxiosRequestConfig<D>, 'headers'> {
+  headers: HeadersDefaults;
+}
+
+export interface CreateAxiosDefaults<D = any> extends Omit<AxiosRequestConfig<D>, 'headers'> {
+  headers?: RawAxiosRequestHeaders | AxiosHeaders | Partial<HeadersDefaults>;
+}
+
+export interface AxiosResponse<T = any, D = any> {
+  data: T;
+  status: number;
+  statusText: string;
+  headers: RawAxiosResponseHeaders | AxiosResponseHeaders;
+  config: InternalAxiosRequestConfig<D>;
+  request?: any;
+}
+
+export class AxiosError<T = unknown, D = any> extends Error {
+  constructor(
+      message?: string,
+      code?: string,
+      config?: InternalAxiosRequestConfig<D>,
+      request?: any,
+      response?: AxiosResponse<T, D>
+  );
+
+  config?: InternalAxiosRequestConfig<D>;
+  code?: string;
+  request?: any;
+  response?: AxiosResponse<T, D>;
+  isAxiosError: boolean;
+  status?: number;
+  toJSON: () => object;
+  cause?: Error;
+  static from<T = unknown, D = any>(
+    error: Error | unknown,
+    code?: string,
+    config?: InternalAxiosRequestConfig<D>,
+    request?: any,
+    response?: AxiosResponse<T, D>,
+    customProps?: object,
+): AxiosError<T, D>;
+  static readonly ERR_FR_TOO_MANY_REDIRECTS = "ERR_FR_TOO_MANY_REDIRECTS";
+  static readonly ERR_BAD_OPTION_VALUE = "ERR_BAD_OPTION_VALUE";
+  static readonly ERR_BAD_OPTION = "ERR_BAD_OPTION";
+  static readonly ERR_NETWORK = "ERR_NETWORK";
+  static readonly ERR_DEPRECATED = "ERR_DEPRECATED";
+  static readonly ERR_BAD_RESPONSE = "ERR_BAD_RESPONSE";
+  static readonly ERR_BAD_REQUEST = "ERR_BAD_REQUEST";
+  static readonly ERR_NOT_SUPPORT = "ERR_NOT_SUPPORT";
+  static readonly ERR_INVALID_URL = "ERR_INVALID_URL";
+  static readonly ERR_CANCELED = "ERR_CANCELED";
+  static readonly ECONNABORTED = "ECONNABORTED";
+  static readonly ETIMEDOUT = "ETIMEDOUT";
+}
+
+export class CanceledError<T> extends AxiosError<T> {
+}
+
+export type AxiosPromise<T = any> = Promise<AxiosResponse<T>>;
+
+export interface CancelStatic {
+  new (message?: string): Cancel;
+}
+
+export interface Cancel {
+  message: string | undefined;
+}
+
+export interface Canceler {
+  (message?: string, config?: AxiosRequestConfig, request?: any): void;
+}
+
+export interface CancelTokenStatic {
+  new (executor: (cancel: Canceler) => void): CancelToken;
+  source(): CancelTokenSource;
+}
+
+export interface CancelToken {
+  promise: Promise<Cancel>;
+  reason?: Cancel;
+  throwIfRequested(): void;
+}
+
+export interface CancelTokenSource {
+  token: CancelToken;
+  cancel: Canceler;
+}
+
+export interface AxiosInterceptorOptions {
+  synchronous?: boolean;
+  runWhen?: (config: InternalAxiosRequestConfig) => boolean;
+}
+
+export interface AxiosInterceptorManager<V> {
+  use(onFulfilled?: ((value: V) => V | Promise<V>) | null, onRejected?: ((error: any) => any) | null, options?: AxiosInterceptorOptions): number;
+  eject(id: number): void;
+  clear(): void;
+}
+
+export class Axios {
+  constructor(config?: AxiosRequestConfig);
+  defaults: AxiosDefaults;
+  interceptors: {
+    request: AxiosInterceptorManager<InternalAxiosRequestConfig>;
+    response: AxiosInterceptorManager<AxiosResponse>;
+  };
+  getUri(config?: AxiosRequestConfig): string;
+  request<T = any, R = AxiosResponse<T>, D = any>(config: AxiosRequestConfig<D>): Promise<R>;
+  get<T = any, R = AxiosResponse<T>, D = any>(url: string, config?: AxiosRequestConfig<D>): Promise<R>;
+  delete<T = any, R = AxiosResponse<T>, D = any>(url: string, config?: AxiosRequestConfig<D>): Promise<R>;
+  head<T = any, R = AxiosResponse<T>, D = any>(url: string, config?: AxiosRequestConfig<D>): Promise<R>;
+  options<T = any, R = AxiosResponse<T>, D = any>(url: string, config?: AxiosRequestConfig<D>): Promise<R>;
+  post<T = any, R = AxiosResponse<T>, D = any>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<R>;
+  put<T = any, R = AxiosResponse<T>, D = any>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<R>;
+  patch<T = any, R = AxiosResponse<T>, D = any>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<R>;
+  postForm<T = any, R = AxiosResponse<T>, D = any>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<R>;
+  putForm<T = any, R = AxiosResponse<T>, D = any>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<R>;
+  patchForm<T = any, R = AxiosResponse<T>, D = any>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<R>;
+}
+
+export interface AxiosInstance extends Axios {
+  <T = any, R = AxiosResponse<T>, D = any>(config: AxiosRequestConfig<D>): Promise<R>;
+  <T = any, R = AxiosResponse<T>, D = any>(url: string, config?: AxiosRequestConfig<D>): Promise<R>;
+
+  defaults: Omit<AxiosDefaults, 'headers'> & {
+    headers: HeadersDefaults & {
+      [key: string]: AxiosHeaderValue
+    }
+  };
+}
+
+export interface GenericFormData {
+  append(name: string, value: any, options?: any): any;
+}
+
+export interface GenericHTMLFormElement {
+  name: string;
+  method: string;
+  submit(): void;
+}
+
+export function getAdapter(adapters: AxiosAdapterConfig | AxiosAdapterConfig[] | undefined): AxiosAdapter;
+
+export function toFormData(sourceObj: object, targetFormData?: GenericFormData, options?: FormSerializerOptions): GenericFormData;
+
+export function formToJSON(form: GenericFormData|GenericHTMLFormElement): object;
+
+export function isAxiosError<T = any, D = any>(payload: any): payload is AxiosError<T, D>;
+
+export function spread<T, R>(callback: (...args: T[]) => R): (array: T[]) => R;
+
+export function isCancel(value: any): value is Cancel;
+
+export function all<T>(values: Array<T | Promise<T>>): Promise<T[]>;
+
+export interface AxiosStatic extends AxiosInstance {
+  create(config?: CreateAxiosDefaults): AxiosInstance;
+  Cancel: CancelStatic;
+  CancelToken: CancelTokenStatic;
+  Axios: typeof Axios;
+  AxiosError: typeof AxiosError;
+  HttpStatusCode: typeof HttpStatusCode;
+  readonly VERSION: string;
+  isCancel: typeof isCancel;
+  all: typeof all;
+  spread: typeof spread;
+  isAxiosError: typeof isAxiosError;
+  toFormData: typeof toFormData;
+  formToJSON: typeof formToJSON;
+  getAdapter: typeof getAdapter;
+  CanceledError: typeof CanceledError;
+  AxiosHeaders: typeof AxiosHeaders;
+}
+
+declare const axios: AxiosStatic;
+
+export default axios;
+
+---------
+/// my-low-code-app/backend/src/projects/test/node_modules/form-data/index.d.ts
+
+// Definitions by: Carlos Ballesteros Velasco <https://github.com/soywiz>
+//                 Leon Yu <https://github.com/leonyu>
+//                 BendingBender <https://github.com/BendingBender>
+//                 Maple Miao <https://github.com/mapleeit>
+
+---------
+/// my-low-code-app/backend/src/routes/executeRoutes.ts
+
+import express from 'express';
+import { executeNode, executeCommand } from '../controllers/executeController';
+
+const router = express.Router();
+
+// Exécuter un nœud
+router.post('/', executeNode);
+
+// Exécuter une commande
+router.post('/execute-command', executeCommand);
+
+export default router;
+
+---------
+/// my-low-code-app/backend/src/routes/fileRoutes.ts
+
+// backend/src/routes/fileRoutes.ts
+
+import express from 'express';
+import { updateFile, getAccessibleFunctions } from '../controllers/fileController';
+
+const router = express.Router();
+
+// Mettre à jour un fichier
+router.post('/', updateFile);
+
+// Obtenir les fonctions accessibles pour un nœud
+router.get('/accessible-functions', getAccessibleFunctions);
+
+export default router;
+
+---------
+/// my-low-code-app/backend/src/routes/graphRoutes.ts
+
+// backend/src/routes/graphRoutes.ts
+
+import express from 'express';
+import { getProjectGraph, updateGraph, deleteNode, cloneNode } from '../controllers/graphController';
+
+const router = express.Router();
+
+// Obtenir le graphe d'un projet
+router.get('/', getProjectGraph);
+
+// Mettre à jour le graphe d'un projet
+router.post('/update-graph', updateGraph);
+
+// Supprimer un nœud
+router.post('/delete-node', deleteNode);
+
+// Cloner un nœud
+router.post('/clone-node', cloneNode);
+
+export default router;
+
+---------
+/// my-low-code-app/backend/src/routes/projectRoutes.ts
+
+// backend/src/routes/projectRoutes.ts
+
+import express from 'express';
+import { getProjects, createProject, installPackage } from '../controllers/projectController';
+
+const router = express.Router();
+
+// Obtenir la liste des projets
+router.get('/', getProjects);
+
+// Créer un nouveau projet
+router.post('/create-project', createProject);
+
+// Installer un package dans un projet
+router.post('/install-package', installPackage);
+
+export default router;
+
+---------
+/// my-low-code-app/backend/src/server.ts
+
+// backend/src/server.ts
+
+import express from 'express';
+import cors from 'cors';
+import bodyParser from 'body-parser';
+import dotenv from 'dotenv';
+import mongoose from 'mongoose';
+
+dotenv.config();
+
+import projectRoutes from './routes/projectRoutes';
+import graphRoutes from './routes/graphRoutes';
+import fileRoutes from './routes/fileRoutes';
+import executeRoutes from './routes/executeRoutes';
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+
+// Routes
+app.use('/projects', projectRoutes);
+app.use('/project-graph', graphRoutes);
+app.use('/update-file', fileRoutes);
+app.use('/execute', executeRoutes);
+// Ajoutez d'autres routes selon les besoins
+
+// Connexion à la base de données MongoDB
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/my-low-code-app';
+
+mongoose.connect(MONGO_URI)
+  .then(() => {
+    console.log('Connected to MongoDB');
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.error('Failed to connect to MongoDB', err);
+  });
 
 ---------
 /// my-low-code-app/backend/src/types.ts
@@ -715,80 +1461,172 @@ export interface ProjectGraph {
   edges: Edge[];
 }
 
+---------
+/// my-low-code-app/backend/src/utils/compileNodes.ts
+
+import { INode } from '../models/Node';
+
+export function compileNodes(nodes: INode[], entryFile: string): string {
+  let compiledCode = '';
+  const visitedNodes = new Set<string>();
+
+  function compileNode(nodeId: string) {
+    if (visitedNodes.has(nodeId)) return;
+    visitedNodes.add(nodeId);
+
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+
+    // Ajouter les imports
+    node.data.imports.forEach((imp: string) => {
+      compiledCode += `${imp}\n`;
+    });
+
+    // Ajouter le code du node dans une closure
+    compiledCode += `
+(function(module, exports) {
+  ${node.data.code}
+})((module = { exports: {} }, exports = module.exports));
+`;
+    // Exporter les fonctions
+    node.data.exportedFunctions.forEach((func: string) => {
+      compiledCode += `module.exports.${func} = ${func};\n`;
+    });
+  }
+
+  // Commencer la compilation à partir du fichier d'entrée
+  compileNode(entryFile);
+
+  return compiledCode;
+}
+
+---------
+/// my-low-code-app/backend/src/utils/executeCode.ts
+
+// backend/src/utils/executeCode.ts
+
+import { exec } from 'child_process';
+import path from 'path';
+
+export const executeCode = (filePath: string, callback: (error: Error | null, result: { stdout: string; stderr: string } | null) => void) => {
+  exec(`node ${filePath}`, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`Execution error: ${error.message}`);
+      return callback(error, null);
+    }
+
+    if (stderr) {
+      console.error(`stderr: ${stderr}`);
+      // Vous pouvez choisir d'envoyer stderr comme partie de la réponse
+    }
+
+    console.log(`stdout: ${stdout}`);
+    callback(null, { stdout, stderr });
+  });
+};
 
 ---------
 /// my-low-code-app/backend/src/utils.ts
 
-// backend/src/utils.ts
-
-import { Node, Edge, ProjectGraph } from './types';
+import { Node, Edge } from './types';
 
 /**
- * Sanitize variable names to prevent injection or syntax errors.
- * @param name - The variable name to sanitize.
- * @returns A sanitized variable name.
+ * Function to sanitize variable names.
+ * Replace all invalid characters with underscores.
+ * @param name Variable name to sanitize.
+ * @returns Sanitized variable name.
  */
 function sanitizeVariableName(name: string): string {
   return name.replace(/[^a-zA-Z0-9_$]/g, '_');
 }
 
-/**
- * Compile nodes into a single executable JavaScript code string.
- * @param graph - The project graph containing nodes and edges.
- * @param entryNodeId - The ID of the entry node to start compilation.
- * @returns A string of compiled JavaScript code.
- */
-export function compileNodes(graph: ProjectGraph, entryNodeId: string): string {
+export function compileNodes(nodes: Node[], entryNodeId: string): string {
   let compiledCode = '';
   const visitedNodes = new Set<string>();
 
-  /**
-   * Recursively compile a node and its dependencies.
-   * @param nodeId - The ID of the node to compile.
-   */
   function compileNode(nodeId: string) {
     if (visitedNodes.has(nodeId)) return;
     visitedNodes.add(nodeId);
 
-    const node = graph.nodes.find(n => n.id === nodeId);
+    const node = nodes.find(n => n.id === nodeId);
     if (!node) {
       console.error(`Node with id ${nodeId} not found`);
       return;
     }
 
-    // Ajouter les imports
-    if (node.data.imports && node.data.imports.length > 0) {
-      node.data.imports.forEach((imp: string) => {
-        compiledCode += `${imp}\n`;
-      });
-    }
+    // Add imports
+    node.data.imports.forEach((imp: string) => {
+      compiledCode += `${imp}\n`;
+    });
 
-    // Ajouter le code du nœud
+    // Add node code within a closure
+    const sanitizedFileName = sanitizeVariableName(node.data.fileName);
     compiledCode += `
-    // File: ${node.data.fileName}
-    ${node.data.code}
-    `;
+const ${sanitizedFileName} = (function() {
+  const module = { exports: {} };
+  const exports = module.exports;
+  ${node.data.code}
+  return module.exports;
+})();
+`;
 
-    // Exporter les fonctions vers le scope global
-    if (node.data.exportedFunctions && node.data.exportedFunctions.length > 0) {
-      node.data.exportedFunctions.forEach((func: string) => {
-        const sanitizedFunc = sanitizeVariableName(func);
-        compiledCode += `
-    if (typeof ${sanitizedFunc} === 'function') {
-      globalThis.${sanitizedFunc} = ${sanitizedFunc};
-    }
-    `;
-      });
-    }
-
-    // Compiler les nœuds connectés
-    const connectedEdges = graph.edges.filter(edge => edge.source === nodeId);
-    connectedEdges.forEach(edge => compileNode(edge.target));
+    // Export functions
+    node.data.exportedFunctions.forEach((func: string) => {
+      compiledCode += `if (typeof ${sanitizedFileName}.${func} === 'function') {
+  globalThis.${func} = ${sanitizedFileName}.${func};
+}\n`;
+    });
   }
 
-  // Commencer la compilation à partir du nœud d'entrée
+  // Start compilation from the entry node
   compileNode(entryNodeId);
 
   return compiledCode;
 }
 
+
+ my-low-code-app/frontend/src/App.tsx
+
+// frontend/src/App.tsx
+
+import React from 'react';
+import { Box } from '@chakra-ui/react';
+import { ReactFlowProvider } from 'reactflow';
+import { Sidebar } from './components/Sidebar';
+import { GraphCanvas } from './components/GraphCanvas';
+import { Console } from './components/Console';
+import { Modals } from './components/Modals';
+import { ProjectStructure } from './components/ProjectStructure';
+import { AlertProvider } from './contexts/AlertContext';
+import { ProjectProvider } from './contexts/ProjectContext';
+import { GraphProvider } from './contexts/GraphContext';
+import ErrorBoundary from './components/ErrorBoundary';
+import { ModalProvider } from './contexts/ModalContext';
+
+const App: React.FC = () => {
+  return (
+    <ErrorBoundary>
+      <AlertProvider>
+        <ProjectProvider>
+          <GraphProvider>
+            <ModalProvider>
+              <ReactFlowProvider>
+                <Box display="flex" height="100vh">
+                  <Sidebar />
+                  <GraphCanvas />
+                  <Box display="flex" flexDirection="column" width="40%">
+                    <ProjectStructure />
+                    <Console />
+                  </Box>
+                  <Modals />
+                </Box>
+              </ReactFlowProvider>
+            </ModalProvider>
+          </GraphProvider>
+        </ProjectProvider>
+      </AlertProvider>
+    </ErrorBoundary>
+  );
+};
+
+export default App;
