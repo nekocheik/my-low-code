@@ -1,8 +1,7 @@
-// backend/src/controllers/gitController.ts
-
 import { Request, Response } from 'express';
 import { exec } from 'child_process';
-import fs from 'fs/promises';
+import fs from 'fs';
+import fsPromises from 'fs/promises';
 import path from 'path';
 import Project from '../models/Project';
 import NodeModel from '../models/Node';
@@ -10,245 +9,454 @@ import EdgeModel from '../models/Edge';
 import logger from '../utils/logger';
 import { parse } from '@babel/parser';
 import traverse from '@babel/traverse';
-import simpleGit, { SimpleGit } from 'simple-git';
+import simpleGit, { SimpleGit, SimpleGitOptions, GitError } from 'simple-git';
+import { ParserOptions } from '@babel/parser';
+import { promisify } from 'util';
+import { throttle } from 'lodash';
 
-const git: SimpleGit = simpleGit();
+// Configuration et constantes
+const execAsync = promisify(exec);
+const CONCURRENT_LIMIT = 10;
+const FILE_SIZE_LIMIT = 5 * 1024 * 1024; // 5MB
 
-/**
- * Fonction pour extraire les fonctions exportées d'un fichier.
- */
-async function extractExportedFunctions(filePath: string): Promise<string[]> {
-  const code = await fs.readFile(filePath, 'utf-8');
-  const exportedFunctions: string[] = [];
-  const ast = parse(code, {
-    sourceType: 'module',
-    plugins: ['typescript', 'jsx'],
-  });
-
-  traverse(ast, {
-    ExportNamedDeclaration(path) {
-      const { declaration } = path.node;
-      if (declaration && declaration.type === 'FunctionDeclaration') {
-        const funcName = declaration.id?.name;
-        if (funcName) {
-          exportedFunctions.push(funcName);
-        }
-      }
-    },
-    ExportSpecifier(path) {
-      const exportedNode = path.node.exported;
-      const funcName = 'name' in exportedNode ? exportedNode.name : exportedNode.value;
-      exportedFunctions.push(funcName);
-    },
-  });
-
-  return exportedFunctions;
+// Enum pour les codes d'erreur
+enum ErrorCode {
+  VALIDATION_ERROR = 'VALIDATION_ERROR',
+  GIT_ERROR = 'GIT_ERROR',
+  FILE_ERROR = 'FILE_ERROR',
+  DB_ERROR = 'DB_ERROR'
 }
 
-/**
- * Fonction pour analyser les fichiers et générer les nœuds et arêtes.
- */
-async function analyzeProjectFiles(projectPath: string, projectId: string) {
-  // Récupérer tous les fichiers .js et .ts, y compris dans les sous-dossiers
-  const jsTsFiles: string[] = [];
-
-  async function getJsTsFiles(dirPath: string) {
-    const entries = await fs.readdir(dirPath, { withFileTypes: true });
-    for (const entry of entries) {
-      const fullPath = path.join(dirPath, entry.name);
-      if (entry.isDirectory()) {
-        await getJsTsFiles(fullPath);
-      } else if (entry.isFile() && (entry.name.endsWith('.js') || entry.name.endsWith('.ts'))) {
-        jsTsFiles.push(fullPath);
-      }
-    }
-  }
-
-  await getJsTsFiles(projectPath);
-
-  const nodes: any[] = [];
-  const edges: any[] = [];
-
-  for (const filePath of jsTsFiles) {
-    const content = await fs.readFile(filePath, 'utf-8');
-    const exportedFunctions = await extractExportedFunctions(filePath);
-
-    // Extraire les imports pour créer des arêtes
-    const imports: string[] = [];
-    const ast = parse(content, {
-      sourceType: 'module',
-      plugins: ['typescript', 'jsx'],
-    });
-
-    traverse(ast, {
-      ImportDeclaration(path) {
-        const source = path.node.source.value;
-        imports.push(source);
-      },
-    });
-
-    // Créer un nœud pour ce fichier
-    const relativeFilePath = path.relative(projectPath, filePath);
-    const nodeId = relativeFilePath.replace(/\\/g, '/'); // Utiliser le chemin relatif comme ID
-    const newNode = {
-      project: projectId,
-      id: nodeId,
-      type: 'code',
-      position: { x: Math.random() * 500, y: Math.random() * 500 }, // Position aléatoire ou basée sur une logique
-      data: {
-        label: path.basename(filePath),
-        fileName: relativeFilePath,
-        imports: imports,
-        code: content,
-        exportedFunctions: exportedFunctions,
-      },
-    };
-
-    nodes.push(newNode);
-
-    // Créer des arêtes basées sur les imports
-    for (const imp of imports) {
-      // Résoudre le chemin relatif ou les modules
-      let target = imp;
-      if (imp.startsWith('./') || imp.startsWith('../')) {
-        const importPath = path.resolve(path.dirname(filePath), imp);
-        const importFile = path.relative(projectPath, importPath).replace(/\\/g, '/');
-        target = importFile;
-      }
-
-      edges.push({
-        project: projectId,
-        id: `edge_${nodeId}_to_${target}`,
-        source: nodeId,
-        target: target,
-        animated: false,
-        label: 'imports',
-      });
-    }
-  }
-
-  // Enregistrer les nœuds dans la base de données
-  for (const node of nodes) {
-    await NodeModel.findOneAndUpdate(
-      { project: node.project, id: node.id },
-      node,
-      { upsert: true, new: true, runValidators: true }
-    );
-    logger.info(`Nœud créé/mis à jour pour le fichier: ${node.id}`);
-  }
-
-  // Enregistrer les arêtes dans la base de données
-  for (const edge of edges) {
-    await EdgeModel.findOneAndUpdate(
-      { project: edge.project, id: edge.id },
-      edge,
-      { upsert: true, new: true, runValidators: true }
-    );
-    logger.info(`Arête créée/mise à jour: ${edge.id}`);
-  }
-}
-
-/**
- * Cloner ou mettre à jour un dépôt Git et analyser le projet.
- */
-export const pullFromGit = async (req: Request, res: Response) => {
-  const { repoUrl } = req.body;
-
-  if (!repoUrl) {
-    logger.warn('Tentative de pull Git sans URL de dépôt');
-    return res.status(400).json({ error: 'URL du dépôt Git requise' });
-  }
-
-  const projectName = path.basename(repoUrl, '.git');
-  const projectPath = path.join(__dirname, '..', 'projects', projectName);
-
-  try {
-    // Cloner ou mettre à jour le projet
-    const projectExists = await fs.access(projectPath).then(() => true).catch(() => false);
-    if (projectExists) {
-      await git.cwd(projectPath);
-      await git.pull();
-      logger.info(`Git pull réussi pour le projet: ${projectName}`);
-    } else {
-      await git.clone(repoUrl, projectPath);
-      logger.info(`Git clone réussi: ${repoUrl} dans ${projectPath}`);
-    }
-
-    // Créer ou mettre à jour le projet dans la base de données
-    let project = await Project.findOne({ name: projectName });
-    if (!project) {
-      project = new Project({ name: projectName });
-      await project.save();
-      logger.info(`Nouveau projet créé dans la base de données: ${projectName}`);
-    }
-
-    // Installer les dépendances du projet
-    await new Promise<void>((resolve, reject) => {
-      exec('npm install', { cwd: projectPath }, (error, stdout, stderr) => {
-        if (error) {
-          logger.error(`Erreur lors de l'installation des dépendances: ${error.message}`);
-          return reject(error);
-        }
-        logger.info(`npm install réussi pour le projet: ${projectName}`);
-        resolve();
-      });
-    });
-
-    // Analyser le projet et créer/mettre à jour les nœuds et arêtes
-    await analyzeProjectFiles(projectPath, project._id.toString());
-
-    res.json({ message: 'Projet importé et installé avec succès', projectName });
-  } catch (error: any) {
-    logger.error(`Erreur lors de l'importation du projet: ${error.message}`);
-    res.status(500).json({ message: 'Erreur lors de l\'importation du projet', error: error.message });
+// Configuration Git optimisée
+const gitOptions: Partial<SimpleGitOptions> = {
+  baseDir: process.cwd(),
+  binary: 'git',
+  maxConcurrentProcesses: 6,
+  trimmed: false,
+  timeout: {
+    block: 30000 // 30 secondes
   }
 };
 
-/**
- * Commiter les changements locaux avec un message de commit.
- */
+const git: SimpleGit = simpleGit(gitOptions);
+
+// Configuration Babel optimisée
+const babelConfig: ParserOptions = {
+  sourceType: 'module',
+  plugins: [
+    'typescript',
+    'jsx',
+    ['decorators', { legacy: true }]
+  ] as any[],
+  allowImportExportEverywhere: true,
+  allowReturnOutsideFunction: true
+};
+
+// Interfaces
+interface FileAnalysis {
+  timestamp: number;
+  data: {
+    exports: string[];
+    imports: string[];
+  };
+}
+
+interface ProjectAnalysisResult {
+  processedFiles: number;
+  errors?: Array<{ file: string; error: string }>;
+}
+
+interface ProjectNode {
+  project: string;
+  id: string;
+  type: string;
+  position: { x: number; y: number };
+  data: {
+    label: string;
+    fileName: string;
+    imports: string[];
+    code: string;
+    exportedFunctions: string[];
+    lintErrors: any[];
+  };
+}
+
+interface ProjectEdge {
+  project: string;
+  id: string;
+  source: string;
+  target: string;
+  animated: boolean;
+  label: string;
+}
+
+// Validation des fichiers améliorée
+const isValidFile = (fileName: string): boolean => {
+  const invalidPatterns = [
+    /\.log$/i,
+    /\.(test|spec)\.(js|ts|jsx|tsx)$/i,
+    /^(temp|tmp)\//,
+    /node_modules/,
+    /\.git/,
+    /\.env/
+  ];
+  const maxPathLength = process.platform === 'win32' ? 260 : 4096;
+  
+  return !invalidPatterns.some(pattern => pattern.test(fileName)) &&
+         fileName.length < maxPathLength &&
+         !path.isAbsolute(fileName);
+};
+
+// Cache pour les fichiers analysés
+const fileAnalysisCache = new Map<string, FileAnalysis>();
+
+// Fonction d'extraction des fonctions exportées
+async function extractExportedFunctions(filePath: string): Promise<string[]> {
+  try {
+    const stats = await fsPromises.stat(filePath);
+    const cacheKey = `${filePath}:${stats.mtime.getTime()}`;
+    const cached = fileAnalysisCache.get(cacheKey);
+
+    if (cached) {
+      return cached.data.exports;
+    }
+
+    if (stats.size > FILE_SIZE_LIMIT) {
+      logger.warn(`File too large to analyze: ${filePath}`);
+      return [];
+    }
+
+    const code = await fsPromises.readFile(filePath, 'utf-8');
+    if (!code.trim()) {
+      return [];
+    }
+
+    const exportedFunctions: string[] = [];
+    try {
+      const ast = parse(code, babelConfig);
+
+      traverse(ast, {
+        ExportNamedDeclaration(path) {
+          if (path.node.declaration?.type === 'FunctionDeclaration') {
+            const funcName = path.node.declaration.id?.name;
+            if (funcName) exportedFunctions.push(funcName);
+          }
+        },
+        ExportDefaultDeclaration(path) {
+          if (path.node.declaration?.type === 'FunctionDeclaration') {
+            const funcName = path.node.declaration.id?.name;
+            if (funcName) exportedFunctions.push(funcName);
+          }
+        }
+      });
+
+      fileAnalysisCache.set(cacheKey, {
+        timestamp: Date.now(),
+        data: { exports: exportedFunctions, imports: [] }
+      });
+
+      return exportedFunctions;
+    } catch (parseError) {
+      logger.error(`Parse error in ${filePath}:`, parseError);
+      return [];
+    }
+  } catch (error) {
+    logger.error(`Error extracting functions from ${filePath}:`, error);
+    return [];
+  }
+}
+
+// Analyse des fichiers du projet
+async function analyzeProjectFiles(projectPath: string, projectId: string): Promise<ProjectAnalysisResult> {
+  const errors: Array<{ file: string; error: string }> = [];
+  const processedFiles = new Set<string>();
+
+  async function* findJsTsFiles(dir: string): AsyncGenerator<string> {
+    const entries = await fsPromises.readdir(dir, { withFileTypes: true });
+    
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      
+      if (entry.isDirectory() && !entry.name.includes('node_modules')) {
+        yield* findJsTsFiles(fullPath);
+      } else if (entry.isFile() && /\.(js|ts|jsx|tsx)$/.test(entry.name)) {
+        if (isValidFile(entry.name)) {
+          yield fullPath;
+        }
+      }
+    }
+  }
+
+  async function processBatch(files: string[]) {
+    const nodes: ProjectNode[] = [];
+    const edges: ProjectEdge[] = [];
+
+    await Promise.all(files.map(async (filePath) => {
+      try {
+        if (processedFiles.has(filePath)) return;
+        processedFiles.add(filePath);
+
+        const stats = await fsPromises.stat(filePath);
+        if (stats.size > FILE_SIZE_LIMIT) {
+          throw new Error('File too large');
+        }
+
+        const content = await fsPromises.readFile(filePath, 'utf-8');
+        if (!content.trim()) return;
+
+        const exportedFunctions = await extractExportedFunctions(filePath);
+        const relativeFilePath = path.relative(projectPath, filePath).replace(/\\/g, '/');
+        
+        const node: ProjectNode = {
+          project: projectId,
+          id: relativeFilePath,
+          type: 'code',
+          position: { x: Math.random() * 800, y: Math.random() * 600 },
+          data: {
+            label: path.basename(filePath),
+            fileName: relativeFilePath,
+            imports: [],
+            code: content,
+            exportedFunctions,
+            lintErrors: []
+          }
+        };
+
+        try {
+          const ast = parse(content, babelConfig);
+          traverse(ast, {
+            ImportDeclaration(path) {
+              const importSource = path.node.source.value;
+              node.data.imports.push(importSource);
+
+              const targetPath = resolveImportPath(projectPath, filePath, importSource);
+              if (targetPath) {
+                edges.push({
+                  project: projectId,
+                  id: `${relativeFilePath}_to_${targetPath}`,
+                  source: relativeFilePath,
+                  target: targetPath,
+                  animated: false,
+                  label: 'imports'
+                });
+              }
+            }
+          });
+        } catch (parseError) {
+          logger.error(`Parse error in ${filePath}:`, parseError);
+        }
+
+        nodes.push(node);
+      } catch (error: any) {
+        errors.push({ file: filePath, error: error.message });
+      }
+    }));
+
+    if (nodes.length > 0) {
+      await NodeModel.bulkWrite(
+        nodes.map(node => ({
+          updateOne: {
+            filter: { project: node.project, id: node.id },
+            update: { $set: node },
+            upsert: true
+          }
+        }))
+      );
+    }
+
+    if (edges.length > 0) {
+      await EdgeModel.bulkWrite(
+        edges.map(edge => ({
+          updateOne: {
+            filter: { project: edge.project, id: edge.id },
+            update: { $set: edge },
+            upsert: true
+          }
+        }))
+      );
+    }
+  }
+
+  const filesBatch: string[] = [];
+  for await (const file of findJsTsFiles(projectPath)) {
+    filesBatch.push(file);
+    if (filesBatch.length >= CONCURRENT_LIMIT) {
+      await processBatch([...filesBatch]);
+      filesBatch.length = 0;
+    }
+  }
+
+  if (filesBatch.length > 0) {
+    await processBatch(filesBatch);
+  }
+
+  return {
+    processedFiles: processedFiles.size,
+    errors: errors.length > 0 ? errors : undefined
+  };
+}
+
+// Git handlers
+export const pullFromGit = async (req: Request, res: Response) => {
+  const { repoUrl } = req.body;
+
+  if (!repoUrl || typeof repoUrl !== 'string') {
+    return res.status(400).json({
+      code: ErrorCode.VALIDATION_ERROR,
+      message: 'URL du dépôt Git invalide'
+    });
+  }
+
+  const projectName = path.basename(repoUrl, '.git')
+    .replace(/[^a-zA-Z0-9-_]/g, '_');
+  const projectPath = path.join(__dirname, '..', 'projects', projectName);
+
+  try {
+    const projectExists = await fsPromises.access(projectPath)
+      .then(() => true)
+      .catch(() => false);
+
+    if (projectExists) {
+      await git.cwd(projectPath);
+      const status = await git.status();
+      
+      if (!status.isClean()) {
+        throw new Error('Working directory is not clean');
+      }
+      
+      await git.pull(['--ff-only', '--quiet']);
+    } else {
+      await git.clone(repoUrl, projectPath, [
+        '--depth', '1',
+        '--single-branch',
+        '--quiet'
+      ]);
+    }
+
+    const project = await Project.findOneAndUpdate(
+      { name: projectName },
+      { name: projectName },
+      { upsert: true, new: true }
+    );
+
+    const shouldInstall = await checkNeedsDependencyInstall(projectPath);
+    if (shouldInstall) {
+      await installDependencies(projectPath);
+    }
+
+    const analysisResult = await analyzeProjectFiles(projectPath, project._id.toString());
+
+    res.json({
+      message: 'Projet importé avec succès',
+      projectName,
+      analysis: analysisResult
+    });
+  } catch (error) {
+    handleGitError(error, res);
+  }
+};
+
 export const commitChanges = async (req: Request, res: Response) => {
   const { projectName, commitMessage } = req.body;
 
-  if (!projectName || !commitMessage) {
-    return res.status(400).json({ message: 'Le nom du projet et le message de commit sont requis.' });
+  if (!projectName || !commitMessage?.trim()) {
+    return res.status(400).json({
+      code: ErrorCode.VALIDATION_ERROR,
+      message: 'Nom du projet et message de commit requis'
+    });
   }
 
   const projectPath = path.join(__dirname, '..', 'projects', projectName);
 
   try {
     await git.cwd(projectPath);
-    await git.add('.');
-    await git.commit(commitMessage);
+    const status = await git.status();
 
-    logger.info(`Changements commités dans le projet ${projectName} avec le message: ${commitMessage}`);
-    res.json({ message: 'Changements commités avec succès.' });
-  } catch (error: any) {
-    logger.error(`Erreur lors du commit des changements: ${error.message}`);
-    res.status(500).json({ message: 'Erreur lors du commit des changements.', error: error.message });
+    if (status.isClean()) {
+      return res.json({ message: 'Aucun changement à commiter' });
+    }
+
+    await git.add('.');
+    await git.commit(commitMessage.trim(), {
+      '--no-verify': null,
+      '--quiet': null
+    });
+
+    res.json({ message: 'Changements commités avec succès' });
+  } catch (error) {
+    handleGitError(error, res);
   }
 };
 
-/**
- * Pousser les changements locaux vers le dépôt distant.
- */
 export const pushChanges = async (req: Request, res: Response) => {
   const { projectName } = req.body;
 
   if (!projectName) {
-    return res.status(400).json({ message: 'Le nom du projet est requis.' });
+    return res.status(400).json({
+      code: ErrorCode.VALIDATION_ERROR,
+      message: 'Nom du projet requis'
+    });
   }
 
   const projectPath = path.join(__dirname, '..', 'projects', projectName);
 
   try {
     await git.cwd(projectPath);
-    await git.push();
-
-    logger.info(`Changements poussés vers le dépôt distant pour le projet ${projectName}`);
-    res.json({ message: 'Changements poussés avec succès.' });
-  } catch (error: any) {
-    logger.error(`Erreur lors du push des changements: ${error.message}`);
-    res.status(500).json({ message: 'Erreur lors du push des changements.', error: error.message });
+    await git.push(['--quiet', '--force-with-lease']);
+    
+    res.json({ message: 'Changements poussés avec succès' });
+  } catch (error) {
+    handleGitError(error, res);
   }
 };
+
+// Utility functions
+function handleGitError(error: unknown, res: Response) {
+  logger.error('Git error:', error);
+  
+  if (error instanceof GitError) {
+    res.status(400).json({
+      code: ErrorCode.GIT_ERROR,
+      message: 'Erreur Git',
+      details: error.message
+    });
+  } else {
+    res.status(500).json({
+      code: ErrorCode.GIT_ERROR,
+      message: 'Erreur interne',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+}
+
+async function checkNeedsDependencyInstall(projectPath: string): Promise<boolean> {
+  const packageLockPath = path.join(projectPath, 'package-lock.json');
+  const nodeModulesPath = path.join(projectPath, 'node_modules');
+  
+  return !(await fsPromises.access(packageLockPath).then(() => true).catch(() => false) &&
+           await fsPromises.access(nodeModulesPath).then(() => true).catch(() => false));
+}
+
+async function installDependencies(projectPath: string): Promise<void> {
+  try {
+    await execAsync('npm install --quiet', {
+      cwd: projectPath,
+      timeout: 300000, // 5 minutes
+      maxBuffer: 10 * 1024 * 1024 // 10MB
+    });
+  } catch (error) {
+    throw new Error(`Erreur d'installation des dépendances: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+function resolveImportPath(projectPath: string, currentFile: string, importPath: string): string | null {
+  try {
+    if (importPath.startsWith('.')) {
+      const absolutePath = path.resolve(path.dirname(currentFile), importPath);
+      return path.relative(projectPath, absolutePath).replace(/\\/g, '/');
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}

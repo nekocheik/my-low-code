@@ -8,6 +8,72 @@ import NodeModel from '../models/Node';
 import Edge from '../models/Edge';
 import simpleGit, { SimpleGit } from 'simple-git';
 import logger from '../utils/logger';
+import { analyzeFile } from '../utils/fileAnalyzer';
+
+export async function analyzeProject(req: Request, res: Response) {
+  const { projectId } = req.params;
+  const projectPath = path.join(__dirname, '..', 'projects', projectId);
+
+  try {
+    // Vérifier que le projet existe
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(404).json({ 
+        message: 'Projet non trouvé',
+        error: 'Project not found' 
+      });
+    }
+
+    // Récupérer tous les fichiers .js et .ts
+    const files = await getAllJsTsFiles(projectPath);
+    
+    // Analyser chaque fichier
+    const analysisPromises = files.map(file => 
+      analyzeFile(file, projectId, projectPath)
+    );
+
+    const results = await Promise.all(analysisPromises);
+
+    // Compiler les résultats
+    const nodes = results.flatMap(result => result.nodes);
+    
+    res.json({
+      message: 'Analyse du projet terminée avec succès',
+      projectId,
+      nodesCount: nodes.length
+    });
+
+  } catch (error: any) {
+    logger.error(`Erreur lors de l'analyse du projet ${projectId}: ${error.message}`);
+    res.status(500).json({ 
+      message: 'Erreur lors de l\'analyse du projet',
+      error: error.message 
+    });
+  }
+}
+
+async function getAllJsTsFiles(dirPath: string): Promise<string[]> {
+  const files: string[] = [];
+  async function scan(currentPath: string) {
+    const entries = await fs.promises.readdir(currentPath, { withFileTypes: true });
+    
+    for (const entry of entries) {
+      const fullPath = path.join(currentPath, entry.name);
+      if (entry.isDirectory() && !entry.name.includes('node_modules')) {
+        await scan(fullPath);
+      } else if (
+        entry.isFile() && 
+        (entry.name.endsWith('.js') || entry.name.endsWith('.ts'))
+      ) {
+        files.push(fullPath);
+      }
+    }
+  }
+
+  await scan(dirPath);
+  return files;
+}
+
 
 
 

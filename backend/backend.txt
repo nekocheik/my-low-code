@@ -321,11 +321,10 @@ export const executeNode = async (req: Request, res: Response) => {
 import { Request, Response } from 'express';
 import Project from '../models/Project';
 import NodeModel from '../models/Node';
-import { getFilePath, writeFile } from '../utils/fileUtils';
+import { getFilePath, writeFile, checkFileExists } from '../utils/fileUtils';
 import fs from 'fs/promises';
 import Joi from 'joi';
 import logger from '../utils/logger';
-import path from 'path';
 
 /**
  * Met à jour un fichier de nœud spécifique dans un projet.
@@ -351,7 +350,7 @@ export const updateFile = async (req: Request, res: Response) => {
 
   const { error } = schema.validate({ project, nodeId, nodeData });
   if (error) {
-    logger.error(`Erreur de validation : ${error.details[0].message}`);
+    logger.error(`Validation error: ${error.details[0].message}`);
     return res.status(400).json({ message: error.details[0].message });
   }
 
@@ -369,15 +368,18 @@ export const updateFile = async (req: Request, res: Response) => {
     }
 
     // Résoudre le chemin du fichier
-    const filePath = await getFilePath(project, nodeData.fileName);
+    const filePath = getFilePath(project, nodeData.fileName);
     logger.info(`Resolved file path: ${filePath}`);
 
     // Vérifier si le fichier existe
+    const fileExists = await checkFileExists(filePath);
     let currentFileContent = '';
-    try {
+
+    // Lire le contenu actuel du fichier si il existe
+    if (fileExists) {
       currentFileContent = await fs.readFile(filePath, 'utf8');
       logger.info(`Current file content loaded from: ${filePath}`);
-    } catch (error) {
+    } else {
       logger.warn(`File does not exist: ${filePath}`);
     }
 
@@ -474,7 +476,7 @@ export const updateNode = async (req: Request, res: Response) => {
     console.log('Node successfully updated in the database:', updatedNode);
 
     // Now write the updated code to the file system
-    const filePath = await getFilePath(project, nodeData.fileName);
+    const filePath = getFilePath(project, nodeData.fileName);
     console.log('Resolved file path:', filePath);
 
     await writeFile(filePath, nodeData.code);
@@ -487,43 +489,6 @@ export const updateNode = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error updating node or writing file.', error: error.message });
   }
 };
-
-export const listFiles = async (req: Request, res: Response) => {
-  const { project } = req.params;
-
-  if (!project) {
-    return res.status(400).json({ message: 'Project is required.' });
-  }
-
-  const projectPath = path.join(__dirname, '..', 'projects', project);
-
-  try {
-    const files = await getAllFiles(projectPath, ['node_modules']);
-    res.json({ files });
-  } catch (error: any) {
-    res.status(500).json({ message: 'Error listing files.', error: error.message });
-  }
-};
-
-// Fonction récursive pour obtenir tous les fichiers, en excluant certains dossiers
-async function getAllFiles(dir: string, exclude: string[] = []): Promise<string[]> {
-  let results: string[] = [];
-  const list = await fs.readdir(dir, { withFileTypes: true });
-
-  for (const dirent of list) {
-    const fullPath = path.join(dir, dirent.name);
-    if (dirent.isDirectory()) {
-      if (!exclude.includes(dirent.name)) {
-        const subDirFiles = await getAllFiles(fullPath, exclude);
-        results = results.concat(subDirFiles);
-      }
-    } else {
-      results.push(path.relative(dir, fullPath));
-    }
-  }
-
-  return results;
-}
 
 
 ---------
@@ -579,17 +544,15 @@ async function extractExportedFunctions(filePath: string): Promise<string[]> {
 /**
  * Fonction pour analyser les fichiers et générer les nœuds et arêtes.
  */
-
-
 async function analyzeProjectFiles(projectPath: string, projectId: string) {
-  // Récupérer tous les fichiers .js et .ts
+  // Récupérer tous les fichiers .js et .ts, y compris dans les sous-dossiers
   const jsTsFiles: string[] = [];
 
   async function getJsTsFiles(dirPath: string) {
     const entries = await fs.readdir(dirPath, { withFileTypes: true });
     for (const entry of entries) {
       const fullPath = path.join(dirPath, entry.name);
-      if (entry.isDirectory() && !entry.name.includes('node_modules')) {  // Ignorer node_modules
+      if (entry.isDirectory()) {
         await getJsTsFiles(fullPath);
       } else if (entry.isFile() && (entry.name.endsWith('.js') || entry.name.endsWith('.ts'))) {
         jsTsFiles.push(fullPath);
@@ -603,123 +566,83 @@ async function analyzeProjectFiles(projectPath: string, projectId: string) {
   const edges: any[] = [];
 
   for (const filePath of jsTsFiles) {
-    try {
-      // Lire et vérifier le contenu du fichier
-      const content = await fs.readFile(filePath, 'utf-8');
-      if (!content) {
-        logger.warn(`Contenu vide pour le fichier: ${filePath}`);
-        continue;
+    const content = await fs.readFile(filePath, 'utf-8');
+    const exportedFunctions = await extractExportedFunctions(filePath);
+
+    // Extraire les imports pour créer des arêtes
+    const imports: string[] = [];
+    const ast = parse(content, {
+      sourceType: 'module',
+      plugins: ['typescript', 'jsx'],
+    });
+
+    traverse(ast, {
+      ImportDeclaration(path) {
+        const source = path.node.source.value;
+        imports.push(source);
+      },
+    });
+
+    // Créer un nœud pour ce fichier
+    const relativeFilePath = path.relative(projectPath, filePath);
+    const nodeId = relativeFilePath.replace(/\\/g, '/'); // Utiliser le chemin relatif comme ID
+    const newNode = {
+      project: projectId,
+      id: nodeId,
+      type: 'code',
+      position: { x: Math.random() * 500, y: Math.random() * 500 }, // Position aléatoire ou basée sur une logique
+      data: {
+        label: path.basename(filePath),
+        fileName: relativeFilePath,
+        imports: imports,
+        code: content,
+        exportedFunctions: exportedFunctions,
+      },
+    };
+
+    nodes.push(newNode);
+
+    // Créer des arêtes basées sur les imports
+    for (const imp of imports) {
+      // Résoudre le chemin relatif ou les modules
+      let target = imp;
+      if (imp.startsWith('./') || imp.startsWith('../')) {
+        const importPath = path.resolve(path.dirname(filePath), imp);
+        const importFile = path.relative(projectPath, importPath).replace(/\\/g, '/');
+        target = importFile;
       }
 
-      const exportedFunctions = await extractExportedFunctions(filePath);
-
-      // Extraire les imports
-      const imports: string[] = [];
-      const ast = parse(content, {
-        sourceType: 'module',
-        plugins: ['typescript', 'jsx'],
-      });
-
-      traverse(ast, {
-        ImportDeclaration(path) {
-          const source = path.node.source.value;
-          imports.push(source);
-        },
-      });
-
-      // Créer un nœud avec tous les champs requis
-      const relativeFilePath = path.relative(projectPath, filePath);
-      const nodeId = relativeFilePath.replace(/\\/g, '/');
-      const newNode = {
+      edges.push({
         project: projectId,
-        id: nodeId,
-        type: 'code',
-        position: { 
-          x: Math.random() * 500, 
-          y: Math.random() * 500 
-        },
-        data: {
-          label: path.basename(filePath),
-          fileName: relativeFilePath,
-          imports: imports,
-          code: content || '// No code provided', // S'assurer que code n'est jamais undefined
-          exportedFunctions: exportedFunctions,
-          lintErrors: [] // Ajouter le champ lintErrors avec un tableau vide par défaut
-        },
-      };
-
-      nodes.push(newNode);
-
-      // Créer des arêtes pour les imports
-      for (const imp of imports) {
-        let target = imp;
-        if (imp.startsWith('./') || imp.startsWith('../')) {
-          const importPath = path.resolve(path.dirname(filePath), imp);
-          const importFile = path.relative(projectPath, importPath).replace(/\\/g, '/');
-          target = importFile;
-        }
-
-        edges.push({
-          project: projectId,
-          id: `edge_${nodeId}_to_${target}`,
-          source: nodeId,
-          target: target,
-          animated: false,
-          label: 'imports',
-        });
-      }
-    } catch (error: any) {
-      logger.error(`Erreur lors du traitement du fichier ${filePath}: ${error.message}`);
-      continue; // Passer au fichier suivant en cas d'erreur
+        id: `edge_${nodeId}_to_${target}`,
+        source: nodeId,
+        target: target,
+        animated: false,
+        label: 'imports',
+      });
     }
   }
 
-  // Sauvegarder les nœuds avec une meilleure gestion des erreurs
+  // Enregistrer les nœuds dans la base de données
   for (const node of nodes) {
-    try {
-      const result = await NodeModel.findOneAndUpdate(
-        { project: node.project, id: node.id },
-        node,
-        { 
-          upsert: true, 
-          new: true, 
-          runValidators: true,
-          setDefaultsOnInsert: true 
-        }
-      );
-      if (result) {
-        logger.info(`Nœud créé/mis à jour pour le fichier: ${node.id}`);
-      } else {
-        logger.error(`Échec de la création/mise à jour du nœud pour le fichier: ${node.id}`);
-      }
-    } catch (error: any) {
-      logger.error(`Erreur lors de la sauvegarde du nœud ${node.id}: ${error.message}`);
-    }
+    await NodeModel.findOneAndUpdate(
+      { project: node.project, id: node.id },
+      node,
+      { upsert: true, new: true, runValidators: true }
+    );
+    logger.info(`Nœud créé/mis à jour pour le fichier: ${node.id}`);
   }
 
-  // Sauvegarder les arêtes avec une meilleure gestion des erreurs
+  // Enregistrer les arêtes dans la base de données
   for (const edge of edges) {
-    try {
-      const result = await EdgeModel.findOneAndUpdate(
-        { project: edge.project, id: edge.id },
-        edge,
-        { 
-          upsert: true, 
-          new: true, 
-          runValidators: true 
-        }
-      );
-      if (result) {
-        logger.info(`Arête créée/mise à jour: ${edge.id}`);
-      } else {
-        logger.error(`Échec de la création/mise à jour de l'arête: ${edge.id}`);
-      }
-    } catch (error: any) {
-      logger.error(`Erreur lors de la sauvegarde de l'arête ${edge.id}: ${error.message}`);
-    }
+    await EdgeModel.findOneAndUpdate(
+      { project: edge.project, id: edge.id },
+      edge,
+      { upsert: true, new: true, runValidators: true }
+    );
+    logger.info(`Arête créée/mise à jour: ${edge.id}`);
   }
 }
-
 
 /**
  * Cloner ou mettre à jour un dépôt Git et analyser le projet.
@@ -837,9 +760,7 @@ import Project from '../models/Project';
 import NodeModel from '../models/Node';
 import Edge from '../models/Edge';
 import path from 'path';
-import fs, { writeFile } from 'fs/promises';
-import logger from '../utils/logger';
-import { getFilePath } from '../utils/fileUtils';
+import fs from 'fs/promises';
 
 export const getProjectGraph = async (req: Request, res: Response) => {
   const { project } = req.query;
@@ -880,22 +801,10 @@ export const updateGraph = async (req: Request, res: Response) => {
   try {
     const existingProject = await Project.findOne({ name: project });
     if (!existingProject) {
+      console.error(`Project "${project}" not found.`);
       return res.status(404).json({ message: 'Project not found.' });
     }
 
-    for (const node of nodes) {
-      const filePath = await getFilePath(project, node.data.fileName);
-      try {
-        await writeFile(filePath, node.data.code);
-        logger.info(`File written: ${filePath}`);
-      } catch (fsError: any) {
-        logger.error(`Error writing file ${filePath}:`, fsError);
-        return res.status(500).json({ 
-          message: `Error writing file for node ${node.id}.`, 
-          error: fsError.message 
-        });
-      }
-    }
     const projectPath = path.join(__dirname, '..', 'projects', project);
 
     // Vérifier si le dossier du projet existe
@@ -1258,98 +1167,58 @@ import { Request, Response } from 'express';
 import { getFilePath, writeFile } from '../utils/fileUtils';
 import NodeModel from '../models/Node';
 
-interface NodeData {
-  label: string;
-  fileName: string;
-  code: string;
-  [key: string]: any;
-}
-
-interface UpdateNodeRequest {
-  project: string;
-  nodeId: string;
-  nodeData: NodeData;
-}
-
-// Validation des données d'entrée
-const validateInput = (data: Partial<UpdateNodeRequest>): string | null => {
-  const { project, nodeId, nodeData } = data;
-  
-  if (!project || !nodeId || !nodeData) {
-    return 'Project, nodeId, and nodeData are required.';
-  }
-
-  const requiredFields = ['label', 'fileName', 'code'];
-  const missingField = requiredFields.find(field => !nodeData[field]);
-  
-  if (missingField) {
-    return `Field '${missingField}' is required in nodeData.`;
-  }
-
-  return null;
-};
-
-// Mise à jour du node dans la base de données
-const updateNodeInDb = async (
-  project: string, 
-  nodeId: string, 
-  nodeData: NodeData
-) => {
-  const updatedNode = await NodeModel.findOneAndUpdate(
-    { project, id: nodeId },
-    { $set: { data: nodeData } },
-    { new: true, runValidators: true }
-  );
-
-  if (!updatedNode) {
-    throw new Error('Node not found.');
-  }
-
-  return updatedNode;
-};
-
-// Écriture du code dans le système de fichiers
-const writeCodeToFile = async (
-  project: string, 
-  fileName: string, 
-  code: string
-): Promise<void> => {
-  const filePath = getFilePath(project, fileName);
-  await writeFile(filePath, code);
-};
-
-// Controller principal
-export const updateNode = async (req: Request, res: Response): Promise<Response> => {
+export const updateNode = async (req: Request, res: Response) => {
+  console.log('Request received for updating node');
   const { project, nodeId, nodeData } = req.body;
 
+  // Log the incoming data
+  console.log('Incoming request data:', { project, nodeId, nodeData });
+
+  if (!project || !nodeId || !nodeData) {
+    console.log('Validation failed: Missing project, nodeId, or nodeData');
+    return res.status(400).json({ message: 'Project, nodeId, and nodeData are required.' });
+  }
+
   try {
-    // Validation
-    const validationError = validateInput(req.body);
-    if (validationError) {
-      return res.status(400).json({ message: validationError });
+    // Check that all required fields in nodeData are present
+    const requiredFields = ['label', 'fileName', 'code'];
+    for (const field of requiredFields) {
+      if (!nodeData[field]) {
+        console.log(`Validation failed: Field '${field}' is missing in nodeData`);
+        return res.status(400).json({ message: `Field '${field}' is required in nodeData.` });
+      }
     }
 
-    // Mise à jour en base de données
-    const updatedNode = await updateNodeInDb(project, nodeId, nodeData);
+    // Try to find and update the node in the database
+    console.log('Finding node in the database...');
+    const updatedNode = await NodeModel.findOneAndUpdate(
+      { project, id: nodeId },
+      { $set: { data: nodeData } },
+      { new: true, runValidators: true }
+    );
 
-    // Écriture du fichier
-    await writeCodeToFile(project, nodeData.fileName, nodeData.code);
+    if (!updatedNode) {
+      console.log('Node not found in the database.');
+      return res.status(404).json({ message: 'Node not found.' });
+    }
 
-    return res.json({
-      message: 'Node updated successfully.',
-      node: updatedNode
-    });
+    console.log('Node successfully updated in the database:', updatedNode);
 
+    // Now write the updated code to the file system
+    const filePath = getFilePath(project, nodeData.fileName);
+    console.log('Resolved file path:', filePath);
+
+    await writeFile(filePath, nodeData.code);
+    console.log(`File successfully written to path: ${filePath}`);
+
+    res.json({ message: 'Node updated successfully.', node: updatedNode });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    const statusCode = errorMessage === 'Node not found.' ? 404 : 500;
-
-    return res.status(statusCode).json({
-      message: 'Error updating node or writing file.',
-      error: errorMessage
-    });
+    // Catch and log any errors that occur
+    console.error('Error updating node or writing file:', error);
+    res.status(500).json({ message: 'Error updating node or writing file.', error: error.message });
   }
 };
+
 
 ---------
 /// my-low-code-app/backend/src/controllers/projectController.ts
@@ -1364,72 +1233,6 @@ import NodeModel from '../models/Node';
 import Edge from '../models/Edge';
 import simpleGit, { SimpleGit } from 'simple-git';
 import logger from '../utils/logger';
-import { analyzeFile } from '../utils/fileAnalyzer';
-
-export async function analyzeProject(req: Request, res: Response) {
-  const { projectId } = req.params;
-  const projectPath = path.join(__dirname, '..', 'projects', projectId);
-
-  try {
-    // Vérifier que le projet existe
-    const project = await Project.findById(projectId);
-    if (!project) {
-      return res.status(404).json({ 
-        message: 'Projet non trouvé',
-        error: 'Project not found' 
-      });
-    }
-
-    // Récupérer tous les fichiers .js et .ts
-    const files = await getAllJsTsFiles(projectPath);
-    
-    // Analyser chaque fichier
-    const analysisPromises = files.map(file => 
-      analyzeFile(file, projectId, projectPath)
-    );
-
-    const results = await Promise.all(analysisPromises);
-
-    // Compiler les résultats
-    const nodes = results.flatMap(result => result.nodes);
-    
-    res.json({
-      message: 'Analyse du projet terminée avec succès',
-      projectId,
-      nodesCount: nodes.length
-    });
-
-  } catch (error: any) {
-    logger.error(`Erreur lors de l'analyse du projet ${projectId}: ${error.message}`);
-    res.status(500).json({ 
-      message: 'Erreur lors de l\'analyse du projet',
-      error: error.message 
-    });
-  }
-}
-
-async function getAllJsTsFiles(dirPath: string): Promise<string[]> {
-  const files: string[] = [];
-  async function scan(currentPath: string) {
-    const entries = await fs.promises.readdir(currentPath, { withFileTypes: true });
-    
-    for (const entry of entries) {
-      const fullPath = path.join(currentPath, entry.name);
-      if (entry.isDirectory() && !entry.name.includes('node_modules')) {
-        await scan(fullPath);
-      } else if (
-        entry.isFile() && 
-        (entry.name.endsWith('.js') || entry.name.endsWith('.ts'))
-      ) {
-        files.push(fullPath);
-      }
-    }
-  }
-
-  await scan(dirPath);
-  return files;
-}
-
 
 
 
@@ -1695,39 +1498,26 @@ export interface IEdge extends Document {
   id: string;
   source: string;
   target: string;
-  animated: boolean;
-  label: string;
+  animated?: boolean;
+  label?: string;
+  style?: Record<string, any>;
 }
 
 const EdgeSchema: Schema = new Schema({
-  project: { 
-    type: Schema.Types.ObjectId, 
-    ref: 'Project', 
-    required: true 
-  },
-  id: { 
-    type: String, 
-    required: true 
-  },
-  source: { 
-    type: String, 
-    required: true 
-  },
-  target: { 
-    type: String, 
-    required: true 
-  },
-  animated: { 
-    type: Boolean, 
-    default: false 
-  },
-  label: { 
-    type: String, 
-    default: 'connects to' 
-  }
+  project: { type: Schema.Types.ObjectId, ref: 'Project', required: true },
+  id: { type: String, required: true },
+  source: { type: String, required: true },
+  target: { type: String, required: true },
+  animated: { type: Boolean, default: false },
+  label: { type: String },
+  style: { type: Schema.Types.Mixed },
 });
 
+// Index composé pour assurer l'unicité de l'ID par projet
+EdgeSchema.index({ project: 1, id: 1 }, { unique: true });
+
 export default mongoose.model<IEdge>('Edge', EdgeSchema);
+
 
 ---------
 /// my-low-code-app/backend/src/models/Node.ts
@@ -1755,34 +1545,25 @@ export interface INode extends Document {
 }
 
 const NodeSchema: Schema = new Schema({
-  project: { 
-    type: Schema.Types.ObjectId, 
-    ref: 'Project', 
-    required: true 
-  },
-  id: { 
-    type: String, 
-    required: true 
-  },
-  type: { 
-    type: String, 
-    required: true 
-  },
+  project: { type: Schema.Types.ObjectId, ref: 'Project', required: true },
+  id: { type: String, required: true },
+  type: { type: String, required: true },
   position: {
     x: { type: Number, required: true, default: 0 },
     y: { type: Number, required: true, default: 0 },
   },
   data: {
-    label: { type: String, required: true },
-    fileName: { type: String, required: true },
+    label: { type: String, required: true, default: 'Unnamed Node' },
+    fileName: { type: String, required: true, default: 'UnnamedFile.js' },
     imports: { type: [String], default: [] },
-    code: { type: String, required: true },
+    code: { type: String, required: true, default: '// No code provided' },
     exportedFunctions: { type: [String], default: [] },
     lintErrors: { type: [Schema.Types.Mixed], default: [] },
   },
 });
 
 export default mongoose.model<INode>('Node', NodeSchema);
+
 
 ---------
 /// my-low-code-app/backend/src/models/Project.ts
@@ -1795,18 +1576,12 @@ export interface IProject extends Document {
 }
 
 const ProjectSchema: Schema = new Schema({
-  name: { 
-    type: String, 
-    required: true,
-    unique: true 
-  },
-  createdAt: { 
-    type: Date, 
-    default: Date.now 
-  }
+  name: { type: String, required: true, unique: true },
+  createdAt: { type: Date, default: Date.now },
 });
 
 export default mongoose.model<IProject>('Project', ProjectSchema);
+
 
 ---------
 /// my-low-code-app/backend/src/models/User.ts
@@ -2007,14 +1782,12 @@ import graphRoutes from './routes/graphRoutes';
 import fileRoutes from './routes/fileRoutes';
 import executeRoutes from './routes/executeRoutes';
 import devServerRoutes from './routes/devServerRoutes';
-import gitRoutes from './routes/gitRoutes'; // Si vous avez des routes Git
+import gitRoutes from './routes/gitRoutes';
+import importRoutes from './routes/importRoutes';
+import authRoutes from './routes/authRoutes';
 
-import { errorHandler } from './middleware/errorHandler'; // Middleware de gestion des erreurs
-import logger from './utils/logger'; // Importer le logger
-
-// Documentation de l'API (par exemple Swagger)
-import swaggerUi from 'swagger-ui-express';
-import swaggerJsdoc from 'swagger-jsdoc';
+import { errorHandler } from './middleware/errorHandler';
+import logger from './utils/logger';
 
 dotenv.config();
 
@@ -2026,36 +1799,22 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+app.use('/auth', authRoutes);
 app.use('/projects', projectRoutes);
 app.use('/project-graph', graphRoutes);
 app.use('/update-file', fileRoutes);
 app.use('/execute', executeRoutes);
 app.use('/dev-server', devServerRoutes);
-app.use('/git', gitRoutes); // Si vous avez des routes Git
+app.use('/git', gitRoutes);
+app.use('/import', importRoutes);
 
-// Configuration Swagger
-const options = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'Low-Code App API',
-      version: '1.0.0',
-    },
-  },
-  apis: ['./src/routes/*.ts'], // Chemin vers vos fichiers de routes
-};
-
-const specs = swaggerJsdoc(options);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
-
-// Middleware de gestion des erreurs (doit être placé après toutes les routes)
+// Middleware de gestion des erreurs
 app.use(errorHandler);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/low-code-app')
   .then(() => {
     logger.info('Connected to MongoDB');
-    // Démarrer le serveur seulement après la connexion à MongoDB
     app.listen(PORT, () => {
       logger.info(`Server is running on port ${PORT}`);
     });
@@ -2064,6 +1823,7 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/low-code-ap
     logger.error(`MongoDB connection error: ${err.message}`);
   });
 
+export default app;
 
 ---------
 /// my-low-code-app/backend/src/types.ts
@@ -2167,135 +1927,26 @@ export const executeCode = (filePath: string, callback: (error: Error | null, re
 
 
 ---------
-/// my-low-code-app/backend/src/utils/fileAnalyzer.ts
-
-import fs from 'fs/promises';
-import path from 'path';
-import { parse } from '@babel/parser';
-import traverse from '@babel/traverse';
-import NodeModel, { INode } from '../models/Node';
-import logger from '../utils/logger';
-
-export interface FileAnalysisResult {
-  nodes: INode[];
-  imports: string[];
-  exportedFunctions: string[];
-}
-
-export async function analyzeFile(
-  filePath: string,
-  projectId: string,
-  projectPath: string
-): Promise<FileAnalysisResult> {
-  try {
-    // Lire le contenu du fichier
-    const content = await fs.readFile(filePath, 'utf-8');
-    if (!content) {
-      throw new Error(`Fichier vide: ${filePath}`);
-    }
-
-    // Analyser le code avec Babel
-    const ast = parse(content, {
-      sourceType: 'module',
-      plugins: ['typescript', 'jsx'],
-    });
-
-    // Extraire les imports et exports
-    const imports: string[] = [];
-    const exportedFunctions: string[] = [];
-
-    traverse(ast, {
-      ImportDeclaration(path) {
-        const source = path.node.source.value;
-        imports.push(source);
-      },
-      ExportNamedDeclaration(path) {
-        const { declaration } = path.node;
-        if (declaration && declaration.type === 'FunctionDeclaration') {
-          const funcName = declaration.id?.name;
-          if (funcName) {
-            exportedFunctions.push(funcName);
-          }
-        }
-      },
-    });
-
-    // Créer le nœud
-    const relativeFilePath = path.relative(projectPath, filePath);
-    const nodeId = relativeFilePath.replace(/\\/g, '/');
-
-    const nodeData = {
-      project: projectId,
-      id: nodeId,
-      type: 'code',
-      position: { 
-        x: Math.random() * 500, 
-        y: Math.random() * 500 
-      },
-      data: {
-        label: path.basename(filePath),
-        fileName: relativeFilePath,
-        imports: imports,
-        code: content,
-        exportedFunctions: exportedFunctions,
-        lintErrors: []
-      }
-    };
-
-    // Sauvegarder le nœud
-    const node = await NodeModel.findOneAndUpdate(
-      { project: projectId, id: nodeId },
-      nodeData,
-      { upsert: true, new: true, runValidators: true }
-    );
-
-    if (!node) {
-      throw new Error(`Échec de la création/mise à jour du nœud pour ${nodeId}`);
-    }
-
-    logger.info(`Nœud créé/mis à jour avec succès pour ${nodeId}`);
-
-    return {
-      nodes: [node],
-      imports,
-      exportedFunctions
-    };
-
-  } catch (error: any) {
-    logger.error(`Erreur lors de l'analyse du fichier ${filePath}: ${error.message}`);
-    throw error;
-  }
-}
-
----------
 /// my-low-code-app/backend/src/utils/fileUtils.ts
 
+// backend/src/utils/fileUtils.ts
 
 import fs from 'fs/promises';
 import path from 'path';
 import logger from './logger';
-import mkdirp from 'mkdirp'; // Ajoutez cette dépendance si ce n'est pas déjà fait
 
 /**
- * Résout le chemin du fichier pour un projet donné.
- * @param project - Nom du projet.
- * @param fileName - Nom du fichier.
- * @returns Chemin complet du fichier.
+ * Vérifie si un fichier existe.
+ * @param filePath - Chemin du fichier à vérifier.
+ * @returns Promise<boolean> indiquant si le fichier existe.
  */
-export async function getFilePath(project: string, fileName: string): Promise<string> {
-  // Le dossier de base des projets
-  const projectsBasePath = path.join(__dirname, '..', 'projects');
-  const projectPath = path.join(projectsBasePath, project);
-  
-  // Construire le chemin complet du fichier
-  const fullPath = path.join(projectPath, fileName);
-  
-  // S'assurer que le dossier parent existe
-  const dirPath = path.dirname(fullPath);
-  await mkdirp(dirPath);
-  
-  logger.info(`Built file path: ${fullPath}`);
-  return fullPath;
+export async function checkFileExists(filePath: string): Promise<boolean> {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -2306,43 +1957,49 @@ export async function getFilePath(project: string, fileName: string): Promise<st
 export async function writeFile(filePath: string, content: string): Promise<void> {
   logger.info(`Attempting to write file: ${filePath}`);
   try {
-    // S'assurer que le dossier parent existe
-    const dirPath = path.dirname(filePath);
-    await mkdirp(dirPath);
-    
-    // Écrire le fichier
     await fs.writeFile(filePath, content);
     logger.info(`File successfully written at ${filePath}`);
   } catch (error) {
     logger.error(`Error writing file at ${filePath}: ${(error as Error).message}`);
-    throw error;
+    throw error; // Propager l'erreur
   }
 }
+
+/**
+ * Résout le chemin du fichier pour un projet donné.
+ * @param project - Nom du projet.
+ * @param fileName - Nom du fichier.
+ * @returns Chemin complet du fichier.
+ */
+export function getFilePath(project: string, fileName: string): string {
+  const projectPath = path.join(__dirname, '..', 'projects', project);
+  logger.info(`Building file path for project: ${project}, File name: ${fileName}`);
+  return path.join(projectPath, fileName);
+}
+
 
 ---------
 /// my-low-code-app/backend/src/utils/logger.ts
 
-import winston from 'winston';
+import { createLogger, format, transports } from 'winston';
 
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
+const logger = createLogger({
+  level: 'info', // Niveau de log (error, warn, info, verbose, debug, silly)
+  format: format.combine(
+    format.timestamp({
+      format: 'YYYY-MM-DD HH:mm:ss'
+    }),
+    format.printf(info => `${info.timestamp} [${info.level.toUpperCase()}]: ${info.message}`)
   ),
   transports: [
-    new winston.transports.File({ filename: 'error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'combined.log' }),
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      )
-    })
-  ]
+    new transports.Console(),
+    new transports.File({ filename: 'logs/error.log', level: 'error' }),
+    new transports.File({ filename: 'logs/combined.log' }),
+  ],
 });
 
 export default logger;
+
 
 ---------
 /// my-low-code-app/backend/src/utils.ts
@@ -2403,3 +2060,49 @@ const ${sanitizedFileName} = (function() {
   return compiledCode;
 }
 
+
+ my-low-code-app/frontend/src/App.tsx
+
+// frontend/src/App.tsx
+
+import React from 'react';
+import { Box } from '@chakra-ui/react';
+import { ReactFlowProvider } from 'reactflow';
+import { Sidebar } from './components/Sidebar';
+import { GraphCanvas } from './components/GraphCanvas';
+import { Console } from './components/Console';
+import { Modals } from './components/Modals';
+import { ProjectStructure } from './components/ProjectStructure';
+import { AlertProvider } from './contexts/AlertContext';
+import { ProjectProvider } from './contexts/ProjectContext';
+import { GraphProvider } from './contexts/GraphContext';
+import ErrorBoundary from './components/ErrorBoundary';
+import { ModalProvider } from './contexts/ModalContext';
+
+const App: React.FC = () => {
+  return (
+    <ErrorBoundary>
+      <AlertProvider>
+        <ProjectProvider>
+          <GraphProvider>
+            <ModalProvider>
+              <ReactFlowProvider>
+                <Box display="flex" height="100vh">
+                  <Sidebar />
+                  <GraphCanvas />
+                  <Box display="flex" flexDirection="column" width="40%">
+                    <ProjectStructure />
+                    <Console />
+                  </Box>
+                  <Modals />
+                </Box>
+              </ReactFlowProvider>
+            </ModalProvider>
+          </GraphProvider>
+        </ProjectProvider>
+      </AlertProvider>
+    </ErrorBoundary>
+  );
+};
+
+export default App;

@@ -1,43 +1,163 @@
 // backend/src/controllers/fileController.ts
 
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import Project from '../models/Project';
 import NodeModel from '../models/Node';
-import { getFilePath, writeFile, checkFileExists } from '../utils/fileUtils';
+import { getFilePath, writeFile } from '../utils/fileUtils';
 import fs from 'fs/promises';
 import Joi from 'joi';
 import logger from '../utils/logger';
+import path from 'path';
+import rateLimit from 'express-rate-limit';
+import compression from 'compression';
+import NodeCache from 'node-cache';
+
+// Configuration du cache
+const fileCache = new NodeCache({ stdTTL: 300 }); // 5 minutes TTL
+
+// Enum pour les codes d'erreur
+enum ErrorCode {
+  VALIDATION_ERROR = 'VALIDATION_ERROR',
+  NODE_NOT_FOUND = 'NODE_NOT_FOUND',
+  FILE_WRITE_ERROR = 'FILE_WRITE_ERROR',
+  FILE_READ_ERROR = 'FILE_READ_ERROR',
+  PROJECT_NOT_FOUND = 'PROJECT_NOT_FOUND',
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR'
+}
+
+// Configuration du rate limiter
+export const updateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limite chaque IP à 100 requêtes par fenêtre
+  message: 'Too many update requests from this IP'
+});
+
+// Configuration de la compression
+export const compressionMiddleware = compression({
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) return false;
+    return compression.filter(req, res);
+  },
+  threshold: 1024 // Compresse seulement les réponses plus grandes que 1KB
+});
+
+// Middleware de performance
+export const performanceMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  const start = process.hrtime();
+  res.on('finish', () => {
+    const [seconds, nanoseconds] = process.hrtime(start);
+    const duration = seconds * 1000 + nanoseconds / 1e6;
+    logger.info(`${req.method} ${req.url} - ${duration.toFixed(2)}ms`);
+  });
+  next();
+};
+
+// Schémas de validation
+const NODE_DATA_SCHEMA = Joi.object({
+  project: Joi.string().required(),
+  nodeId: Joi.string().required(),
+  nodeData: Joi.object({
+    label: Joi.string().required(),
+    fileName: Joi.string().required(),
+    imports: Joi.array().items(Joi.string()).required(),
+    code: Joi.string().required(),
+    exportedFunctions: Joi.array().items(Joi.string()).required(),
+    lintErrors: Joi.array().items(Joi.any()).optional(),
+  }).required(),
+}).cache();
+
+// Gestionnaire d'erreurs central
+const handleError = (error: any, res: Response) => {
+  const errorCode = error.code || ErrorCode.UNKNOWN_ERROR;
+  logger.error(`${errorCode}: ${error.message}`);
+  const status = error.status || 500;
+  res.status(status).json({
+    code: errorCode,
+    message: error.message,
+    details: error.details || null
+  });
+};
+
+// Fonctions utilitaires
+const validateFilePath = (filePath: string): boolean => {
+  const normalizedPath = path.normalize(filePath);
+  const projectRoot = path.normalize(path.join(__dirname, '..', 'projects'));
+  return normalizedPath.startsWith(projectRoot) && !normalizedPath.includes('..');
+};
+
+const validateProject = async (project: string): Promise<boolean> => {
+  try {
+    const projectExists = await Project.exists({ name: project });
+    if (!projectExists) return false;
+    
+    const projectPath = path.join(__dirname, '..', 'projects', project);
+    await fs.access(projectPath);
+    
+    return true;
+  } catch (error) {
+    logger.error(`Project validation error: ${error}`);
+    return false;
+  }
+};
+
+const checkFileChanges = async (filePath: string, newContent: string): Promise<boolean> => {
+  try {
+    const fileExists = await fs.access(filePath)
+      .then(() => true)
+      .catch(() => false);
+    
+    if (!fileExists) return true;
+
+    const currentContent = await fs.readFile(filePath, 'utf8');
+    return currentContent !== newContent;
+  } catch (error) {
+    logger.error(`Error checking file changes: ${error}`);
+    return true;
+  }
+};
+
+const getCachedFile = async (filePath: string): Promise<string | null> => {
+  const cached = fileCache.get<string>(filePath);
+  if (cached) return cached;
+  
+  try {
+    const content = await fs.readFile(filePath, 'utf8');
+    fileCache.set(filePath, content);
+    return content;
+  } catch (error) {
+    logger.error(`Cache miss error: ${error}`);
+    return null;
+  }
+};
 
 /**
  * Met à jour un fichier de nœud spécifique dans un projet.
- * @param req - Requête Express contenant project, nodeId et nodeData dans le corps.
- * @param res - Réponse Express.
  */
 export const updateFile = async (req: Request, res: Response) => {
   const { project, nodeId, nodeData } = req.body;
 
-  // Validation des données entrantes
-  const schema = Joi.object({
-    project: Joi.string().required(),
-    nodeId: Joi.string().required(),
-    nodeData: Joi.object({
-      label: Joi.string().required(),
-      fileName: Joi.string().required(),
-      imports: Joi.array().items(Joi.string()).required(),
-      code: Joi.string().required(),
-      exportedFunctions: Joi.array().items(Joi.string()).required(),
-      lintErrors: Joi.array().items(Joi.any()).optional(),
-    }).required(),
-  });
-
-  const { error } = schema.validate({ project, nodeId, nodeData });
-  if (error) {
-    logger.error(`Validation error: ${error.details[0].message}`);
-    return res.status(400).json({ message: error.details[0].message });
-  }
-
   try {
-    // Trouver et mettre à jour le nœud dans la base de données
+    // Validation des données entrantes
+    const { error } = NODE_DATA_SCHEMA.validate({ project, nodeId, nodeData });
+    if (error) {
+      throw { 
+        code: ErrorCode.VALIDATION_ERROR, 
+        status: 400, 
+        message: error.details[0].message 
+      };
+    }
+
+    // Validation du projet
+    const isValidProject = await validateProject(project);
+    if (!isValidProject) {
+      throw { 
+        code: ErrorCode.PROJECT_NOT_FOUND, 
+        status: 404, 
+        message: 'Project not found.' 
+      };
+    }
+
+    // Mise à jour du nœud
     const updatedNode = await NodeModel.findOneAndUpdate(
       { project, id: nodeId },
       { $set: { data: nodeData } },
@@ -45,29 +165,28 @@ export const updateFile = async (req: Request, res: Response) => {
     );
 
     if (!updatedNode) {
-      logger.warn(`Node not found: project="${project}", nodeId="${nodeId}"`);
-      return res.status(404).json({ message: 'Node not found.' });
+      throw { 
+        code: ErrorCode.NODE_NOT_FOUND, 
+        status: 404, 
+        message: 'Node not found.' 
+      };
     }
 
-    // Résoudre le chemin du fichier
-    const filePath = getFilePath(project, nodeData.fileName);
-    logger.info(`Resolved file path: ${filePath}`);
-
-    // Vérifier si le fichier existe
-    const fileExists = await checkFileExists(filePath);
-    let currentFileContent = '';
-
-    // Lire le contenu actuel du fichier si il existe
-    if (fileExists) {
-      currentFileContent = await fs.readFile(filePath, 'utf8');
-      logger.info(`Current file content loaded from: ${filePath}`);
-    } else {
-      logger.warn(`File does not exist: ${filePath}`);
+    // Gestion du fichier
+    const filePath = await getFilePath(project, nodeData.fileName);
+    if (!validateFilePath(filePath)) {
+      throw { 
+        code: ErrorCode.VALIDATION_ERROR, 
+        status: 400, 
+        message: 'Invalid file path.' 
+      };
     }
 
-    // Écrire le fichier seulement si le contenu a changé
-    if (currentFileContent !== nodeData.code) {
+    // Vérifier les changements dans le fichier
+    const hasChanges = await checkFileChanges(filePath, nodeData.code);
+    if (hasChanges) {
       await writeFile(filePath, nodeData.code);
+      fileCache.del(filePath); // Invalider le cache
       logger.info(`File updated: ${filePath}`);
     } else {
       logger.info('No changes in file content, skipping file write.');
@@ -75,75 +194,68 @@ export const updateFile = async (req: Request, res: Response) => {
 
     res.json({ message: 'Node updated successfully.', node: updatedNode });
   } catch (error: any) {
-    logger.error(`Error updating file: ${error.message}`);
-    res.status(500).json({ message: 'Error updating file.', error: error.message });
+    handleError(error, res);
   }
 };
 
 /**
  * Récupère les fonctions accessibles pour un nœud spécifique.
- * (À implémenter selon vos besoins spécifiques)
- * @param req - Requête Express.
- * @param res - Réponse Express.
  */
 export const getAccessibleFunctions = async (req: Request, res: Response) => {
   const { project, nodeId } = req.query;
 
-  if (!project || typeof project !== 'string' || !nodeId || typeof nodeId !== 'string') {
-    logger.error('Invalid query parameters for getAccessibleFunctions.');
-    return res.status(400).json({ message: 'Project and nodeId are required and must be strings.' });
-  }
-
   try {
-    // Logique pour récupérer les fonctions accessibles
-    // Cela dépend de la structure de vos nœuds et de comment les fonctions sont exposées
-
-    // Exemple hypothétique :
-    const node = await NodeModel.findOne({ project, id: nodeId });
-    if (!node) {
-      logger.warn(`Node not found for accessible functions: project="${project}", nodeId="${nodeId}"`);
-      return res.status(404).json({ message: 'Node not found.' });
+    if (!project || typeof project !== 'string' || !nodeId || typeof nodeId !== 'string') {
+      throw { 
+        code: ErrorCode.VALIDATION_ERROR, 
+        status: 400, 
+        message: 'Project and nodeId are required and must be strings.' 
+      };
     }
 
-    // Supposons que les fonctions exportées sont stockées dans node.data.exportedFunctions
-    const accessibleFunctions = node.data.exportedFunctions;
+    const node = await NodeModel.findOne({ project, id: nodeId });
+    if (!node) {
+      throw { 
+        code: ErrorCode.NODE_NOT_FOUND, 
+        status: 404, 
+        message: 'Node not found.' 
+      };
+    }
 
+    const accessibleFunctions = node.data.exportedFunctions;
     res.json({ accessibleFunctions });
   } catch (error: any) {
-    logger.error(`Error fetching accessible functions: ${error.message}`);
-    res.status(500).json({ message: 'Error fetching accessible functions.', error: error.message });
+    handleError(error, res);
   }
 };
 
 /**
- * Met à jour un fichier de nœud spécifique. (Alternative ou extension de updateFile)
- * @param req - Requête Express.
- * @param res - Réponse Express.
+ * Met à jour un nœud spécifique.
  */
 export const updateNode = async (req: Request, res: Response) => {
-  console.log('Request received for updating node');
   const { project, nodeId, nodeData } = req.body;
 
-  // Log the incoming data
-  console.log('Incoming request data:', { project, nodeId, nodeData });
-
-  if (!project || !nodeId || !nodeData) {
-    console.log('Validation failed: Missing project, nodeId, or nodeData');
-    return res.status(400).json({ message: 'Project, nodeId, and nodeData are required.' });
-  }
-
   try {
-    // Check that all required fields in nodeData are present
+    if (!project || !nodeId || !nodeData) {
+      throw { 
+        code: ErrorCode.VALIDATION_ERROR, 
+        status: 400, 
+        message: 'Project, nodeId, and nodeData are required.' 
+      };
+    }
+
+    // Validation des champs requis
     const requiredFields = ['label', 'fileName', 'code'];
     for (const field of requiredFields) {
       if (!nodeData[field]) {
-        console.log(`Validation failed: Field '${field}' is missing in nodeData`);
-        return res.status(400).json({ message: `Field '${field}' is required in nodeData.` });
+        throw { 
+          code: ErrorCode.VALIDATION_ERROR, 
+          status: 400, 
+          message: `Field '${field}' is required in nodeData.` 
+        };
       }
     }
 
-    // Try to find and update the node in the database
-    console.log('Finding node in the database...');
     const updatedNode = await NodeModel.findOneAndUpdate(
       { project, id: nodeId },
       { $set: { data: nodeData } },
@@ -151,23 +263,86 @@ export const updateNode = async (req: Request, res: Response) => {
     );
 
     if (!updatedNode) {
-      console.log('Node not found in the database.');
-      return res.status(404).json({ message: 'Node not found.' });
+      throw { 
+        code: ErrorCode.NODE_NOT_FOUND, 
+        status: 404, 
+        message: 'Node not found.' 
+      };
     }
 
-    console.log('Node successfully updated in the database:', updatedNode);
-
-    // Now write the updated code to the file system
-    const filePath = getFilePath(project, nodeData.fileName);
-    console.log('Resolved file path:', filePath);
+    const filePath = await getFilePath(project, nodeData.fileName);
+    if (!validateFilePath(filePath)) {
+      throw { 
+        code: ErrorCode.VALIDATION_ERROR, 
+        status: 400, 
+        message: 'Invalid file path.' 
+      };
+    }
 
     await writeFile(filePath, nodeData.code);
-    console.log(`File successfully written to path: ${filePath}`);
-
+    fileCache.del(filePath); // Invalider le cache
+    
     res.json({ message: 'Node updated successfully.', node: updatedNode });
-  } catch (error) {
-    // Catch and log any errors that occur
-    console.error('Error updating node or writing file:', error);
-    res.status(500).json({ message: 'Error updating node or writing file.', error: error.message });
+  } catch (error: any) {
+    handleError(error, res);
   }
 };
+
+/**
+ * Liste tous les fichiers d'un projet.
+ */
+export const listFiles = async (req: Request, res: Response) => {
+  const { project } = req.params;
+
+  try {
+    if (!project) {
+      throw { 
+        code: ErrorCode.VALIDATION_ERROR, 
+        status: 400, 
+        message: 'Project is required.' 
+      };
+    }
+
+    const isValidProject = await validateProject(project);
+    if (!isValidProject) {
+      throw { 
+        code: ErrorCode.PROJECT_NOT_FOUND, 
+        status: 404, 
+        message: 'Project not found.' 
+      };
+    }
+
+    const projectPath = path.join(__dirname, '..', 'projects', project);
+    const files = await getAllFiles(projectPath, ['node_modules'], 5);
+    res.json({ files });
+  } catch (error: any) {
+    handleError(error, res);
+  }
+};
+
+/**
+ * Fonction récursive pour obtenir tous les fichiers.
+ */
+async function getAllFiles(dir: string, exclude: string[] = [], maxDepth: number = 5): Promise<string[]> {
+  if (maxDepth < 0) return [];
+  
+  const results: string[] = [];
+  const list = await fs.readdir(dir, { withFileTypes: true });
+  
+  await Promise.all(list.map(async dirent => {
+    if (exclude.includes(dirent.name)) return;
+    
+    const fullPath = path.join(dir, dirent.name);
+    if (dirent.isDirectory()) {
+      const subFiles = await getAllFiles(fullPath, exclude, maxDepth - 1);
+      results.push(...subFiles);
+    } else {
+      results.push(path.relative(dir, fullPath));
+    }
+  }));
+
+  return results;
+}
+
+// Export des types pour la documentation
+export type { Request, Response, NextFunction };

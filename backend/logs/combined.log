@@ -229,3 +229,1010 @@
 2024-10-21 23:04:04 [INFO]: Fetched list of projects.
 2024-10-21 23:05:19 [INFO]: Connected to MongoDB
 2024-10-21 23:05:19 [INFO]: Server is running on port 3000
+2024-10-22 01:48:56 [INFO]: Connected to MongoDB
+2024-10-22 01:48:56 [INFO]: Server is running on port 3000
+2024-10-22 01:49:02 [INFO]: Fetched list of projects.
+2024-10-22 01:49:02 [INFO]: Fetched list of projects.
+2024-10-22 01:49:09 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:09 [ERROR]: Error writing file /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts: ENOENT: no such file or directory, open '/Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts'
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:17 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:17 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:17 [ERROR]: Error writing file /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts: ENOENT: no such file or directory, open '/Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts'
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:19 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:19 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:20 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:20 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:21 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:21 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:21 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:21 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:21 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:21 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:21 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:21 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:21 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:21 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:21 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:21 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:21 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:21 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:21 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:21 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:21 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:21 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:22 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:22 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:23 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:23 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:24 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:24 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:26 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:26 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:27 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:28 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:28 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:29 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:29 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:30 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:30 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:32 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:32 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:35 [INFO]: Attempting to delete project: my-low-code
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/authController.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/devServerController.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/executeController.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/fileController.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/gitController.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/graphController.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/importController.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/nodeController.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/controllers/projectController.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/auth.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/middleware/errorHandler.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Edge.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Node.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/Project.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/models/User.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/authRoutes.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/devServerRoutes.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/executeRoutes.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/fileRoutes.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/gitRoutes.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/graphRoutes.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/importRoutes.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/routes/projectRoutes.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/server.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/types.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/compileNodes.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/executeCode.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/fileUtils.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/utils/logger.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/edges/index.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useAlerts.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/hooks/useProjects.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/index.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/nodes/types.ts
+2024-10-22 01:49:35 [INFO]: Built file path: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:35 [INFO]: File written: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/utils.ts
+2024-10-22 01:49:36 [INFO]: Project "my-low-code" deleted from database.
+2024-10-22 01:49:36 [INFO]: Associated nodes and edges deleted for project "my-low-code".
+2024-10-22 01:49:36 [INFO]: Project path to delete: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code
+2024-10-22 01:49:36 [INFO]: Project directory "/Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code" deleted successfully.
+2024-10-22 01:49:36 [INFO]: Fetched list of projects.
+2024-10-22 01:49:43 [INFO]: Fetched list of projects.
+2024-10-22 01:49:43 [INFO]: Fetched list of projects.
+2024-10-22 01:50:00 [INFO]: Git clone réussi: https://github.com/nekocheik/my-low-code dans /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code
+2024-10-22 01:50:02 [INFO]: Nouveau projet créé dans la base de données: my-low-code
+2024-10-22 01:50:04 [INFO]: npm install réussi pour le projet: my-low-code
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/context.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/controllers/authController.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/controllers/devServerController.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/controllers/executeController.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/controllers/fileController.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/controllers/gitController.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/controllers/graphController.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/controllers/importController.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/controllers/nodeController.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/controllers/projectController.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/middleware/auth.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/middleware/errorHandler.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/models/Edge.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/models/Node.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/models/Project.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/models/User.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/routes/authRoutes.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/routes/devServerRoutes.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/routes/executeRoutes.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/routes/fileRoutes.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/routes/gitRoutes.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/routes/graphRoutes.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/routes/importRoutes.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/routes/projectRoutes.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/server.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/types.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/utils/compileNodes.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/utils/executeCode.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/utils/fileUtils.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/utils/logger.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/utils.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: frontend/src/axiosInstance.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: frontend/src/edges/index.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: frontend/src/hooks/useAlerts.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: frontend/src/hooks/useProjects.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: frontend/src/nodes/index.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: frontend/src/nodes/types.ts
+2024-10-22 01:50:04 [INFO]: Nœud créé/mis à jour pour le fichier: frontend/src/utils.ts
+2024-10-22 01:50:04 [ERROR]: Erreur lors de l'importation du projet: Validation failed: data.code: Path `data.code` is required.
+2024-10-22 01:58:23 [INFO]: Fetched list of projects.
+2024-10-22 01:58:23 [INFO]: Fetched list of projects.
+2024-10-22 01:58:30 [INFO]: Attempting to delete project: my-low-code
+2024-10-22 01:58:31 [INFO]: Project "my-low-code" deleted from database.
+2024-10-22 01:58:31 [INFO]: Associated nodes and edges deleted for project "my-low-code".
+2024-10-22 01:58:31 [INFO]: Project path to delete: /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code
+2024-10-22 01:58:31 [INFO]: Project directory "/Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code" deleted successfully.
+2024-10-22 01:58:33 [INFO]: Fetched list of projects.
+2024-10-22 01:58:33 [INFO]: Fetched list of projects.
+2024-10-22 01:58:48 [INFO]: Git clone réussi: https://github.com/nekocheik/my-low-code dans /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code
+2024-10-22 01:58:48 [INFO]: Nouveau projet créé dans la base de données: my-low-code
+2024-10-22 01:58:50 [INFO]: npm install réussi pour le projet: my-low-code
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/context.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/controllers/authController.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/controllers/devServerController.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/controllers/executeController.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/controllers/fileController.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/controllers/gitController.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/controllers/graphController.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/controllers/importController.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/controllers/nodeController.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/controllers/projectController.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/middleware/auth.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/middleware/errorHandler.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/models/Edge.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/models/Node.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/models/Project.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/models/User.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/routes/authRoutes.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/routes/devServerRoutes.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/routes/executeRoutes.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/routes/fileRoutes.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/routes/gitRoutes.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/routes/graphRoutes.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/routes/importRoutes.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/routes/projectRoutes.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/server.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/types.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/utils/compileNodes.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/utils/executeCode.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/utils/fileUtils.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/utils/logger.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: backend/src/utils.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: frontend/src/axiosInstance.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: frontend/src/edges/index.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: frontend/src/hooks/useAlerts.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: frontend/src/hooks/useProjects.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: frontend/src/nodes/index.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: frontend/src/nodes/types.ts
+2024-10-22 01:58:50 [INFO]: Nœud créé/mis à jour pour le fichier: frontend/src/utils.ts
+2024-10-22 01:58:50 [ERROR]: Erreur lors de l'importation du projet: Validation failed: data.code: Path `data.code` is required.

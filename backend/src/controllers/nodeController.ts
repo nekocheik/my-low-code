@@ -2,54 +2,95 @@ import { Request, Response } from 'express';
 import { getFilePath, writeFile } from '../utils/fileUtils';
 import NodeModel from '../models/Node';
 
-export const updateNode = async (req: Request, res: Response) => {
-  console.log('Request received for updating node');
-  const { project, nodeId, nodeData } = req.body;
+interface NodeData {
+  label: string;
+  fileName: string;
+  code: string;
+  [key: string]: any;
+}
 
-  // Log the incoming data
-  console.log('Incoming request data:', { project, nodeId, nodeData });
+interface UpdateNodeRequest {
+  project: string;
+  nodeId: string;
+  nodeData: NodeData;
+}
 
+// Validation des données d'entrée
+const validateInput = (data: Partial<UpdateNodeRequest>): string | null => {
+  const { project, nodeId, nodeData } = data;
+  
   if (!project || !nodeId || !nodeData) {
-    console.log('Validation failed: Missing project, nodeId, or nodeData');
-    return res.status(400).json({ message: 'Project, nodeId, and nodeData are required.' });
+    return 'Project, nodeId, and nodeData are required.';
   }
 
+  const requiredFields = ['label', 'fileName', 'code'];
+  const missingField = requiredFields.find(field => !nodeData[field]);
+  
+  if (missingField) {
+    return `Field '${missingField}' is required in nodeData.`;
+  }
+
+  return null;
+};
+
+// Mise à jour du node dans la base de données
+const updateNodeInDb = async (
+  project: string, 
+  nodeId: string, 
+  nodeData: NodeData
+) => {
+  const updatedNode = await NodeModel.findOneAndUpdate(
+    { project, id: nodeId },
+    { $set: { data: nodeData } },
+    { new: true, runValidators: true }
+  );
+
+  if (!updatedNode) {
+    throw new Error('Node not found.');
+  }
+
+  return updatedNode;
+};
+
+// Écriture du code dans le système de fichiers
+const writeCodeToFile = async (
+  project: string, 
+  fileName: string, 
+  code: string
+): Promise<void> => {
+  const filePath = getFilePath(project, fileName);
+  await writeFile(filePath, code);
+};
+
+// Controller principal
+export const updateNode = async (req: Request, res: Response): Promise<Response> => {
+  const { project, nodeId, nodeData } = req.body;
+
   try {
-    // Check that all required fields in nodeData are present
-    const requiredFields = ['label', 'fileName', 'code'];
-    for (const field of requiredFields) {
-      if (!nodeData[field]) {
-        console.log(`Validation failed: Field '${field}' is missing in nodeData`);
-        return res.status(400).json({ message: `Field '${field}' is required in nodeData.` });
-      }
+    // Validation
+    const validationError = validateInput(req.body);
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
     }
 
-    // Try to find and update the node in the database
-    console.log('Finding node in the database...');
-    const updatedNode = await NodeModel.findOneAndUpdate(
-      { project, id: nodeId },
-      { $set: { data: nodeData } },
-      { new: true, runValidators: true }
-    );
+    // Mise à jour en base de données
+    const updatedNode = await updateNodeInDb(project, nodeId, nodeData);
 
-    if (!updatedNode) {
-      console.log('Node not found in the database.');
-      return res.status(404).json({ message: 'Node not found.' });
-    }
+    // Écriture du fichier
+    await writeCodeToFile(project, nodeData.fileName, nodeData.code);
 
-    console.log('Node successfully updated in the database:', updatedNode);
+    return res.json({
+      message: 'Node updated successfully.',
+      node: updatedNode
+    });
 
-    // Now write the updated code to the file system
-    const filePath = getFilePath(project, nodeData.fileName);
-    console.log('Resolved file path:', filePath);
-
-    await writeFile(filePath, nodeData.code);
-    console.log(`File successfully written to path: ${filePath}`);
-
-    res.json({ message: 'Node updated successfully.', node: updatedNode });
   } catch (error) {
-    // Catch and log any errors that occur
-    console.error('Error updating node or writing file:', error);
-    res.status(500).json({ message: 'Error updating node or writing file.', error: error.message });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    const statusCode = errorMessage === 'Node not found.' ? 404 : 500;
+
+    return res.status(statusCode).json({
+      message: 'Error updating node or writing file.',
+      error: errorMessage
+    });
   }
 };

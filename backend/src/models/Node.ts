@@ -21,18 +21,27 @@ export interface INode extends Document {
 }
 
 const NodeSchema: Schema = new Schema({
-  project: { type: Schema.Types.ObjectId, ref: 'Project', required: true },
-  id: { type: String, required: true },
-  type: { type: String, required: true },
+  project: { 
+    type: String, 
+    required: true 
+  },
+  id: { 
+    type: String, 
+    required: true 
+  },
+  type: { 
+    type: String, 
+    required: true 
+  },
   position: {
     x: { type: Number, required: true, default: 0 },
     y: { type: Number, required: true, default: 0 },
   },
   data: {
-    label: { type: String, required: true, default: 'Unnamed Node' },
-    fileName: { type: String, required: true, default: 'UnnamedFile.js' },
+    label: { type: String, required: true },
+    fileName: { type: String, required: true },
     imports: { type: [String], default: [] },
-    code: { type: String, required: true, default: '// No code provided' },
+    code: { type: String, required: true },
     exportedFunctions: { type: [String], default: [] },
     lintErrors: { type: [Schema.Types.Mixed], default: [] },
   },

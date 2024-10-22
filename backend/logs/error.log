@@ -1,2 +1,6 @@
 2024-10-21 23:01:28 [ERROR]: Erreur lors de l'importation du projet: Unexpected token, expected "from" (4:0)
 2024-10-21 23:03:35 [ERROR]: Erreur lors de l'importation du projet: Unexpected token, expected "from" (4:0)
+2024-10-22 01:49:09 [ERROR]: Error writing file /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts: ENOENT: no such file or directory, open '/Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/backend/src/context.ts'
+2024-10-22 01:49:17 [ERROR]: Error writing file /Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts: ENOENT: no such file or directory, open '/Users/cheikkone49/Projet/my-low-code-app/backend/src/projects/my-low-code/frontend/src/axiosInstance.ts'
+2024-10-22 01:50:04 [ERROR]: Erreur lors de l'importation du projet: Validation failed: data.code: Path `data.code` is required.
+2024-10-22 01:58:50 [ERROR]: Erreur lors de l'importation du projet: Validation failed: data.code: Path `data.code` is required.
