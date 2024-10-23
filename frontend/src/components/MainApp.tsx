@@ -19,3 +19,5 @@ export const MainApp: React.FC = () => {
     </Flex>
   );
 };
+
+export default MainApp;

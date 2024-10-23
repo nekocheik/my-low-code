@@ -1,70 +1,68 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+// frontend/src/contexts/AuthContext.tsx
+
+import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
 import axiosInstance from '../axiosInstance';
 import { useAlert } from './AlertContext';
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  token: string | null;
   login: (username: string, password: string) => Promise<void>;
-  register: (username: string, password: string) => Promise<void>;
   logout: () => void;
+  // Ajoutez d'autres propriétés si nécessaire
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { showAlert } = useAlert();
 
-  useEffect(() => {
-    if (token) {
-      localStorage.setItem('token', token);
-    } else {
-      localStorage.removeItem('token');
-    }
-  }, [token]);
-
-  const login = async (username: string, password: string) => {
+  const login = useCallback(async (username: string, password: string) => {
     try {
       const response = await axiosInstance.post('/auth/login', { username, password });
-      setToken(response.data.token);
+      // Supposons que le token est stocké dans localStorage
+      localStorage.setItem('token', response.data.token);
+      setIsAuthenticated(true);
       showAlert('Connexion réussie.', 'success');
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Échec de la connexion.';
-      showAlert(message, 'error');
+      console.error('Failed to login:', error);
+      showAlert(error.response?.data?.message || 'Échec de la connexion.', 'error');
       throw error;
     }
-  };
+  }, [showAlert]);
 
-  const register = async (username: string, password: string) => {
-    try {
-      await axiosInstance.post('/auth/register', { username, password });
-      showAlert('Inscription réussie. Vous pouvez maintenant vous connecter.', 'success');
-    } catch (error: any) {
-      const message = error.response?.data?.message || 'Échec de l\'inscription.';
-      showAlert(message, 'error');
-      throw error;
-    }
-  };
-
-  const logout = () => {
-    setToken(null);
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    setIsAuthenticated(false);
     showAlert('Déconnexion réussie.', 'info');
-  };
+  }, [showAlert]);
 
-  const isAuthenticated = Boolean(token);
+  useEffect(() => {
+    // Vérifiez si le token est présent lors du chargement initial
+    const token = localStorage.getItem('token');
+    if (token) {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const contextValue: AuthContextType = {
+    isAuthenticated,
+    login,
+    logout,
+    // Ajoutez d'autres fonctions ou propriétés si nécessaire
+  };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, token, login, register, logout }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = (): AuthContextType => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth doit être utilisé dans un AuthProvider');
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };

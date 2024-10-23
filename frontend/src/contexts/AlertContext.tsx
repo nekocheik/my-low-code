@@ -16,7 +16,7 @@ export const AlertProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     toast({
       title: message,
       status: status,
-      duration: 3000,
+      duration: 500,
       isClosable: true,
     });
   };

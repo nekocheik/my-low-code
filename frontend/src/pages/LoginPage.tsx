@@ -51,3 +51,5 @@ export const LoginPage: React.FC = () => {
     </Box>
   );
 };
+
+export default LoginPage

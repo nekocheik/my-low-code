@@ -1,35 +1,46 @@
-// frontend/src/contexts/GraphContext.tsx
-
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
-import { Node, Edge } from 'reactflow';
+import type { Edge } from 'reactflow';
 import axiosInstance from '../axiosInstance';
 import { useAlert } from './AlertContext';
+import { 
+  AppNode, 
+  GraphResponse, 
+  UpdateNodeResponse, 
+  ExecuteNodeResponse,
+  CloneNodeResponse,
+  CodeNodeData 
+} from '../types';
 
 interface GraphContextType {
-  nodes: Node[];
+  nodes: AppNode[];
   edges: Edge[];
+  selectedProject: string | null;
+  setSelectedProject: (project: string) => void;
   loadGraph: (project: string) => Promise<void>;
-  updateGraph: (project: string, updatedNodes: Node[], updatedEdges: Edge[]) => Promise<void>;
-  addNode: (newNode: Node) => void;
+  updateGraph: (updatedNodes: AppNode[], updatedEdges: Edge[]) => Promise<void>;
+  updateNode: (node: AppNode) => Promise<void>;
+  addNode: (newNode: AppNode) => void;
   deleteNode: (nodeId: string) => Promise<void>;
   cloneNode: (nodeId: string) => Promise<void>;
-  executeNode: (nodeId: string) => Promise<{ stdout: string; stderr: string }>;
+  executeNode: (nodeId: string) => Promise<ExecuteNodeResponse>;
 }
 
 const GraphContext = createContext<GraphContextType | undefined>(undefined);
 
 export const GraphProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [nodes, setNodes] = useState<Node[]>([]);
+  const [nodes, setNodes] = useState<AppNode[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const { showAlert } = useAlert();
 
   const loadGraph = useCallback(async (project: string) => {
     try {
-      const response = await axiosInstance.get('/project-graph', {
+      const response = await axiosInstance.get<GraphResponse>('/project-graph', {
         params: { project },
       });
       setNodes(response.data.graph.nodes);
       setEdges(response.data.graph.edges);
+      setSelectedProject(project);
       showAlert('Graphe chargé avec succès.', 'success');
     } catch (error) {
       console.error('Échec du chargement du graphe du projet:', error);
@@ -37,14 +48,19 @@ export const GraphProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   }, [showAlert]);
 
-  const updateGraph = async (project: string, updatedNodes: Node[], updatedEdges: Edge[]) => {
+  const updateGraph = async (updatedNodes: AppNode[], updatedEdges: Edge[]) => {
+    if (!selectedProject) {
+      showAlert('Aucun projet sélectionné.', 'error');
+      throw new Error('No project selected');
+    }
+
     try {
-      const response = await axiosInstance.post('/project-graph/update-graph', {
-        project,
+      await axiosInstance.post<UpdateNodeResponse>('/project-graph/update-graph', {
+        project: selectedProject,
         nodes: updatedNodes,
         edges: updatedEdges
       });
-      console.log('Réponse de mise à jour du graphe:', response.data);
+      
       setNodes(updatedNodes);
       setEdges(updatedEdges);
       showAlert('Graphe mis à jour avec succès.', 'success');
@@ -55,19 +71,61 @@ export const GraphProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   };
 
-  const addNode = (newNode: Node) => {
-    setNodes(prevNodes => [...prevNodes, newNode]);
+  const updateNode = async (node: AppNode) => {
+    if (!selectedProject) {
+      showAlert('Aucun projet sélectionné.', 'error');
+      throw new Error('No project selected');
+    }
+
+    try {
+      await axiosInstance.post<UpdateNodeResponse>('/project-graph/update-node', {
+        project: selectedProject,
+        node: {
+          ...node,
+          data: node.type === 'code' 
+            ? {
+                ...node.data,
+                fileName: (node.data as CodeNodeData).fileName,
+                code: (node.data as CodeNodeData).code,
+                imports: (node.data as CodeNodeData).imports,
+                exportedFunctions: (node.data as CodeNodeData).exportedFunctions,
+              }
+            : { label: node.data.label }
+        }
+      });
+
+      setNodes(prevNodes => 
+        prevNodes.map(n => n.id === node.id ? node : n)
+      );
+      
+      showAlert('Nœud mis à jour avec succès.', 'success');
+    } catch (error) {
+      console.error('Échec de la mise à jour du nœud:', error);
+      showAlert('Échec de la mise à jour du nœud.', 'error');
+      throw error;
+    }
   };
 
+  const addNode = useCallback((newNode: AppNode) => {
+    setNodes(prevNodes => [...prevNodes, newNode]);
+  }, []);
+
   const deleteNode = async (nodeId: string) => {
+    if (!selectedProject) {
+      showAlert('Aucun projet sélectionné.', 'error');
+      throw new Error('No project selected');
+    }
+
     try {
-      const response = await axiosInstance.post('/project-graph/delete-node', {
-        project: '', // Le projet sera passé lors de l'appel
+      await axiosInstance.post<UpdateNodeResponse>('/project-graph/delete-node', {
+        project: selectedProject,
         nodeId
       });
-      console.log('Réponse de suppression du nœud:', response.data);
+      
       setNodes(prevNodes => prevNodes.filter(node => node.id !== nodeId));
-      setEdges(prevEdges => prevEdges.filter(edge => edge.source !== nodeId && edge.target !== nodeId));
+      setEdges(prevEdges => prevEdges.filter(edge => 
+        edge.source !== nodeId && edge.target !== nodeId
+      ));
       showAlert('Nœud supprimé avec succès.', 'success');
     } catch (error) {
       console.error('Échec de la suppression du nœud:', error);
@@ -77,14 +135,19 @@ export const GraphProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const cloneNode = async (nodeId: string) => {
+    if (!selectedProject) {
+      showAlert('Aucun projet sélectionné.', 'error');
+      throw new Error('No project selected');
+    }
+
     try {
       const newNodeId = `${nodeId}_clone`;
-      const response = await axiosInstance.post('/project-graph/clone-node', {
-        project: '', // Le projet sera passé lors de l'appel
+      const response = await axiosInstance.post<CloneNodeResponse>('/project-graph/clone-node', {
+        project: selectedProject,
         nodeId,
         newNodeId
       });
-      console.log('Réponse de clonage du nœud:', response.data);
+      
       setNodes(prevNodes => [...prevNodes, response.data.clonedNode]);
       showAlert('Nœud cloné avec succès.', 'success');
     } catch (error) {
@@ -94,15 +157,20 @@ export const GraphProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   };
 
-  const executeNode = async (nodeId: string): Promise<{ stdout: string; stderr: string }> => {
+  const executeNode = async (nodeId: string): Promise<ExecuteNodeResponse> => {
+    if (!selectedProject) {
+      showAlert('Aucun projet sélectionné.', 'error');
+      throw new Error('No project selected');
+    }
+
     try {
-      const response = await axiosInstance.post('/execute', {
-        project: '', // Le projet sera passé lors de l'appel
+      const response = await axiosInstance.post<ExecuteNodeResponse>('/execute', {
+        project: selectedProject,
         nodeId
       });
-      console.log('Réponse d\'exécution du nœud:', response.data);
+      
       showAlert('Nœud exécuté avec succès.', 'success');
-      return { stdout: response.data.stdout, stderr: response.data.stderr };
+      return response.data;
     } catch (error) {
       console.error('Échec de l\'exécution du nœud:', error);
       showAlert('Échec de l\'exécution du nœud.', 'error');
@@ -111,7 +179,19 @@ export const GraphProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   return (
-    <GraphContext.Provider value={{ nodes, edges, loadGraph, updateGraph, addNode, deleteNode, cloneNode, executeNode }}>
+    <GraphContext.Provider value={{ 
+      nodes, 
+      edges, 
+      selectedProject, 
+      setSelectedProject,
+      loadGraph, 
+      updateGraph, 
+      updateNode,
+      addNode, 
+      deleteNode, 
+      cloneNode, 
+      executeNode 
+    }}>
       {children}
     </GraphContext.Provider>
   );
@@ -124,3 +204,4 @@ export const useGraph = () => {
   }
   return context;
 };
+

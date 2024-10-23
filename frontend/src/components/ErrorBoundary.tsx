@@ -1,45 +1,39 @@
 // frontend/src/components/ErrorBoundary.tsx
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Box, Text, Button } from '@chakra-ui/react';
-import { useAlert } from '../contexts/AlertContext';
+import React, { Component, ReactNode } from 'react';
+import { Box, Text } from '@chakra-ui/react';
 
-interface Props {
+interface ErrorBoundaryProps {
   children: ReactNode;
 }
 
-interface State {
+interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
 }
 
-class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    error: null
-  };
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
 
-  public static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error:', error, errorInfo);
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('ErrorBoundary caught an error', error, errorInfo);
+    // Vous pouvez également envoyer les erreurs à un service de reporting
   }
 
-  public render() {
+  render() {
     if (this.state.hasError) {
+      console.log('Error:', this.state.error);
       return (
-        <Box p={4} bg="red.100" color="red.800" borderRadius="md">
-          <Text fontSize="xl" fontWeight="bold">Oops, there was an error!</Text>
-          <Text mt={2}>{this.state.error?.message}</Text>
-          <Button
-            mt={4}
-            colorScheme="red"
-            onClick={() => this.setState({ hasError: false, error: null })}
-          >
-            Try again
-          </Button>
+        <Box p={5}>
+          <Text fontSize="xl" color="red.500">Quelque chose s'est mal passé.</Text>
+          <Text>{this.state.error?.message}</Text>
         </Box>
       );
     }

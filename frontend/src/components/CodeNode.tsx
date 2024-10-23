@@ -1,48 +1,52 @@
-// frontend/src/components/CodeNode.tsx
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { Box, Button, Input, VStack, HStack, Text } from '@chakra-ui/react';
 import MonacoEditor from '@monaco-editor/react';
 import Select from 'react-select';
 import { useGraph } from '../contexts/GraphContext';
-import axiosInstance from '../axiosInstance'; // Assurez-vous que ce chemin est correct
-import { useProject } from '../contexts/ProjectContext';
+import { CodeNodeData } from '../types';
 import { useAlert } from '../contexts/AlertContext';
 import { ResizableBox } from 'react-resizable';
 import 'react-resizable/css/styles.css';
 
-const CodeNode: React.FC<NodeProps> = ({ id, data }) => {
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
+const CodeNodeComponent: React.FC<NodeProps<CodeNodeData>> = ({ id, data, xPos, yPos }) => {
   const [code, setCode] = useState(data.code || '');
   const [fileName, setFileName] = useState(data.fileName || '');
   const [imports, setImports] = useState<string[]>(data.imports || []);
-  const [availableImports, setAvailableImports] = useState<{ value: string; label: string }[]>([]);
+  const [availableImports, setAvailableImports] = useState<SelectOption[]>([]);
   const [width, setWidth] = useState<number>(300);
   const [height, setHeight] = useState<number>(400);
-  const { updateGraph, deleteNode, cloneNode, nodes, edges } = useGraph();
-  const { selectedProject } = useProject();
+  
+  const { updateNode, deleteNode, cloneNode, selectedProject } = useGraph();
   const { showAlert } = useAlert();
 
   useEffect(() => {
-    axiosInstance
-      .get('/accessible-functions', {
-        params: { project: selectedProject, nodeId: id },
-      })
-      .then((response) => {
-        const options = response.data.accessibleFunctions.map((func: string) => ({
-          value: func,
-          label: func,
-        }));
-        setAvailableImports(options);
-      })
-      .catch((error) => {
-        console.error('Failed to fetch accessible functions:', error);
-        showAlert('Échec de la récupération des fonctions accessibles.', 'error');
-      });
+    if (selectedProject) {
+      axiosInstance
+        .get('/accessible-functions', {
+          params: { project: selectedProject, nodeId: id },
+        })
+        .then((response) => {
+          const options = response.data.accessibleFunctions.map((func: string) => ({
+            value: func,
+            label: func,
+          }));
+          setAvailableImports(options);
+        })
+        .catch((error) => {
+          console.error('Failed to fetch accessible functions:', error);
+          showAlert('Échec de la récupération des fonctions accessibles.', 'error');
+        });
+    }
   }, [id, selectedProject, showAlert]);
 
-  const handleImportChange = (selectedOptions: any) => {
-    const selectedImports = selectedOptions ? selectedOptions.map((option: any) => option.value) : [];
+  const handleImportChange = (selectedOptions: readonly SelectOption[]) => {
+    const selectedImports = selectedOptions ? selectedOptions.map(option => option.value) : [];
     setImports(selectedImports);
   };
 
@@ -52,30 +56,33 @@ const CodeNode: React.FC<NodeProps> = ({ id, data }) => {
   };
 
   const handleSave = useCallback(async () => {
-    const updatedNodes = nodes.map((node) =>
-      node.id === id
-        ? { ...node, data: { ...node.data, code, fileName, imports }, position: { ...node.position }, width, height }
-        : node
-    );
+    const updatedNode = {
+      id,
+      type: 'code' as const,
+      position: { x: xPos, y: yPos },
+      data: {
+        label: fileName,
+        fileName,
+        imports,
+        code,
+        exportedFunctions: data.exportedFunctions,
+        lintErrors: data.lintErrors,
+      },
+      width,
+      height,
+    };
 
     try {
-      await updateGraph(updatedNodes, edges);
+      await updateNode(updatedNode);
       showAlert('Fichier sauvegardé avec succès.', 'success');
     } catch (error: any) {
       console.error('Failed to save file:', error);
-      if (error.response && error.response.data && error.response.data.message) {
-        showAlert(`Échec de la sauvegarde du fichier: ${error.response.data.message}`, 'error');
-      } else {
-        showAlert('Échec de la sauvegarde du fichier.', 'error');
-      }
+      showAlert(
+        `Échec de la sauvegarde du fichier: ${error?.response?.data?.message || 'Erreur inconnue'}`, 
+        'error'
+      );
     }
-  }, [id, code, fileName, imports, nodes, edges, updateGraph, showAlert, width, height]);
-
-  const handleExecute = useCallback(() => {
-    console.log(`Dispatching executeNode event for nodeId: ${id}`);
-    const event = new CustomEvent('executeNode', { detail: { nodeId: id } });
-    window.dispatchEvent(event);
-  }, [id]);
+  }, [id, code, fileName, imports, data.exportedFunctions, data.lintErrors, xPos, yPos, width, height, updateNode, showAlert]);
 
   const handleDelete = useCallback(() => {
     deleteNode(id);
@@ -86,7 +93,13 @@ const CodeNode: React.FC<NodeProps> = ({ id, data }) => {
   }, [id, cloneNode]);
 
   return (
-    <ResizableBox width={width} height={height} onResize={handleResize} minConstraints={[200, 200]} maxConstraints={[600, 600]}>
+    <ResizableBox 
+      width={width} 
+      height={height} 
+      onResize={handleResize}
+      minConstraints={[200, 200]} 
+      maxConstraints={[600, 600]}
+    >
       <Box borderWidth={1} borderRadius="lg" p={3} bg="white" width="100%" height="100%">
         <VStack spacing={3}>
           <Input
@@ -94,8 +107,8 @@ const CodeNode: React.FC<NodeProps> = ({ id, data }) => {
             onChange={(e) => setFileName(e.target.value)}
             placeholder="Nom du fichier"
           />
-          <Box>
-            <Text fontWeight="bold">Imports Internes :</Text>
+          <Box width="100%">
+            <Text fontWeight="bold">Imports :</Text>
             <Select
               isMulti
               options={availableImports}
@@ -104,7 +117,7 @@ const CodeNode: React.FC<NodeProps> = ({ id, data }) => {
               placeholder="Sélectionner des imports"
             />
           </Box>
-          <Box height={150} width="100%">
+          <Box height="150px" width="100%">
             <MonacoEditor
               height="100%"
               language="javascript"
@@ -115,18 +128,25 @@ const CodeNode: React.FC<NodeProps> = ({ id, data }) => {
             />
           </Box>
           {data.lintErrors && data.lintErrors.length > 0 && (
-            <Box>
+            <Box width="100%">
               <Text color="red.500" fontWeight="bold">Erreurs de lint :</Text>
-              {data.lintErrors.map((error: any, index: number) => (
-                <Text key={index} color="red.500">{`Ligne ${error.line}: ${error.message}`}</Text>
+              {data.lintErrors.map((error, index) => (
+                <Text key={index} color="red.500">
+                  {`Ligne ${error.line}: ${error.message}`}
+                </Text>
               ))}
             </Box>
           )}
           <HStack spacing={2}>
-            <Button size="sm" colorScheme="blue" onClick={handleSave}>Sauvegarder</Button>
-            <Button size="sm" colorScheme="green" onClick={handleExecute}>Exécuter</Button>
-            <Button size="sm" colorScheme="red" onClick={handleDelete}>Supprimer</Button>
-            <Button size="sm" colorScheme="purple" onClick={handleClone}>Cloner</Button>
+            <Button size="sm" colorScheme="blue" onClick={handleSave}>
+              Sauvegarder
+            </Button>
+            <Button size="sm" colorScheme="red" onClick={handleDelete}>
+              Supprimer
+            </Button>
+            <Button size="sm" colorScheme="purple" onClick={handleClone}>
+              Cloner
+            </Button>
           </HStack>
         </VStack>
         <Handle type="target" position={Position.Top} />
@@ -136,4 +156,4 @@ const CodeNode: React.FC<NodeProps> = ({ id, data }) => {
   );
 };
 
-export default CodeNode;
+export default CodeNodeComponent;

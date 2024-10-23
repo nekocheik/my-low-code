@@ -26,7 +26,7 @@ const nodeTypes = {
     code: CodeNode,
 };
 
-const UPDATE_DELAY = 1000; // Délai en millisecondes avant la mise à jour
+const UPDATE_DELAY = 30000; // Délai en millisecondes avant la mise à jour
 
 export const GraphCanvas: React.FC = () => {
     const {
@@ -68,11 +68,9 @@ export const GraphCanvas: React.FC = () => {
     }, [selectedProject, loadGraph, showAlert]);
 
     useEffect(() => {
-        if (selectedProject) {
-            console.log("Rafraîchissement du graphe pour le projet:", selectedProject);
-            refreshGraph();
-        }
-    }, [selectedProject]);
+        console.log("ix")
+        refreshGraph();
+    }, [refreshGraph, selectedProject]);
 
     const scheduleUpdate = useCallback((updatedNodes: Node[], updatedEdges: Edge[]) => {
         if (updateTimerRef.current) {

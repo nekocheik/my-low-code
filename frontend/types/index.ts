@@ -1,4 +1,3 @@
-// types.ts
 import type { Node, Edge } from 'reactflow';
 
 export interface CodeNodeData {
@@ -21,7 +20,7 @@ export type CodeNode = Node<CodeNodeData, 'code'>;
 export type PositionLoggerNode = Node<PositionLoggerNodeData, 'position-logger'>;
 export type AppNode = CodeNode | PositionLoggerNode;
 
-// Interface pour les réponses API
+// API Response Types
 export interface GraphResponse {
   graph: {
     nodes: AppNode[];
@@ -31,4 +30,14 @@ export interface GraphResponse {
 
 export interface UpdateNodeResponse {
   message: string;
+}
+
+export interface ExecuteNodeResponse {
+  stdout: string;
+  stderr: string;
+}
+
+export interface CloneNodeResponse {
+  message: string;
+  clonedNode: AppNode;
 }

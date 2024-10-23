@@ -5,7 +5,6 @@ import { Box, Text, VStack, Button, Input, HStack } from '@chakra-ui/react';
 import { useCombined } from '../contexts/CombinedContext'; // Utiliser useCombined
 import axiosInstance from '../axiosInstance';
 import { useAlert } from '../contexts/AlertContext';
-import { useModal } from '../contexts/ModalContext'; // Utiliser useModalContext
 
 export const Console: React.FC = () => {
   const [output, setOutput] = useState('');

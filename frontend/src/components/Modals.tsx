@@ -1,6 +1,6 @@
 // frontend/src/components/Modals.tsx
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -11,67 +11,42 @@ import {
   ModalCloseButton,
   Button,
   Text,
-  useDisclosure,
 } from '@chakra-ui/react';
+import { useModal } from '../contexts/ModalContext';
 import { useGraph } from '../contexts/GraphContext';
 
 export const Modals: React.FC = () => {
-  const { isOpen: isDeleteModalOpen, onOpen: onDeleteModalOpen, onClose: onDeleteModalClose } = useDisclosure();
+  const { isDeleteModalOpen, closeDeleteModal, nodeToDelete } = useModal();
   const { deleteNode } = useGraph();
-  const [nodeToDelete, setNodeToDelete] = React.useState<string | null>(null);
 
-  // This function would be called from a parent component or through an event system
-  const openDeleteModal = (nodeId: string) => {
-    setNodeToDelete(nodeId);
-    onDeleteModalOpen();
-  };
-
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = useCallback(() => {
     if (nodeToDelete) {
       deleteNode(nodeToDelete);
-      onDeleteModalClose();
-      setNodeToDelete(null);
+      closeDeleteModal();
     }
-  };
+  }, [nodeToDelete, deleteNode, closeDeleteModal]);
 
   return (
     <>
       {/* Delete Node Modal */}
-      <Modal isOpen={isDeleteModalOpen} onClose={onDeleteModalClose}>
+      <Modal isOpen={isDeleteModalOpen} onClose={closeDeleteModal}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Confirm Deletion</ModalHeader>
+          <ModalHeader>Confirmer la Suppression</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <Text>Are you sure you want to delete this node? This action cannot be undone.</Text>
+            <Text>Êtes-vous sûr de vouloir supprimer ce nœud ? Cette action est irréversible.</Text>
           </ModalBody>
           <ModalFooter>
             <Button colorScheme="red" mr={3} onClick={handleConfirmDelete}>
-              Delete
+              Supprimer
             </Button>
-            <Button variant="ghost" onClick={onDeleteModalClose}>Cancel</Button>
+            <Button variant="ghost" onClick={closeDeleteModal}>Annuler</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
 
-      {/* You can add more modals here as needed */}
-      {/* For example: Edit Node Modal, Create Connection Modal, etc. */}
+      {/* Ajoutez d'autres modals ici si nécessaire */}
     </>
   );
-};
-
-// This function should be exported and used in parent components to open the delete modal
-export const useModals = () => {
-  const { isOpen: isDeleteModalOpen, onOpen: onDeleteModalOpen, onClose: onDeleteModalClose } = useDisclosure();
-
-  const openDeleteModal = (nodeId: string) => {
-    // Logic to set the node to delete and open the modal
-    onDeleteModalOpen();
-  };
-
-  return {
-    openDeleteModal,
-    isDeleteModalOpen,
-    onDeleteModalClose,
-  };
 };

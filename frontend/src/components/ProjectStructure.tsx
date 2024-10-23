@@ -1,5 +1,3 @@
-// frontend/src/components/ProjectStructure.tsx
-
 import React from 'react';
 import { Box, Text, VStack, HStack, Icon } from '@chakra-ui/react';
 import { FaFolder, FaFile } from 'react-icons/fa';
@@ -28,13 +26,19 @@ const FileTreeItem: React.FC<{ node: FileTreeNode; depth: number }> = ({ node, d
 export const ProjectStructure: React.FC = () => {
   const { nodes } = useGraph();
 
+  // Log pour vérifier la structure des nodes
+  console.log("nodes:", nodes);
+
+  // Filtrer et formater les nodes
   const fileTree: FileTreeNode = {
     name: 'Project Root',
     type: 'folder',
-    children: nodes.map(node => ({
-      name: node.data.fileName,
-      type: 'file'
-    }))
+    children: nodes
+      .filter(node => node?.data?.fileName)  // Filtrer les nodes valides
+      .map(node => ({
+        name: node.data.fileName || 'Unnamed File',  // Assurer une valeur par défaut
+        type: 'file'
+      }))
   };
 
   return (
@@ -44,3 +48,5 @@ export const ProjectStructure: React.FC = () => {
     </Box>
   );
 };
+
+export default ProjectStructure;

@@ -2,115 +2,88 @@
 
 // frontend/src/App.tsx
 
-import React, { Suspense, lazy } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ChakraProvider } from '@chakra-ui/react';
 import { AuthProvider } from './contexts/AuthContext';
 import { AlertProvider } from './contexts/AlertContext';
 import { ProjectProvider } from './contexts/ProjectContext';
 import { GraphProvider } from './contexts/GraphContext';
-import { ModalProvider } from './contexts/ModalContext';
 import { CombinedProvider } from './contexts/CombinedContext';
+import { ModalProvider } from './contexts/ModalContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { MainApp } from './components/MainApp';
 import { Header } from './components/Header';
 import { ReactFlowProvider } from 'reactflow';
 import ErrorBoundary from './components/ErrorBoundary';
-import { QueryClient, QueryClientProvider } from 'react-query';
-import { Modals } from './components/Modals';
-
-// Lazy loading des pages
-const LoginPage = lazy(() => import('./pages/LoginPage')); // Assurez-vous que LoginPage a un export par défaut
-const RegisterPage = lazy(() => import('./pages/RegisterPage')); // Assurez-vous que RegisterPage a un export par défaut
-const MainApp = lazy(() => import('./components/MainApp')); // Assurez-vous que MainApp a un export par défaut
-
-const queryClient = new QueryClient();
 
 const App: React.FC = () => {
   return (
     <ChakraProvider>
-      <QueryClientProvider client={queryClient}>
-        <AlertProvider>
-          <AuthProvider>
-            <ProjectProvider>
-              <GraphProvider>
-                <ModalProvider>
-                  <CombinedProvider>
-                    <ErrorBoundary>
-                      <ReactFlowProvider>
-                        <Router>
-                          <Header />
-                          <Modals /> {/* Composant Modals placé ici */}
-                          <Suspense fallback={<div>Loading...</div>}>
-                            <Routes>
-                              <Route path="/login" element={<LoginPage />} />
-                              <Route path="/register" element={<RegisterPage />} />
-                              <Route
-                                path="/"
-                                element={
-                                  <ProtectedRoute>
-                                    <MainApp />
-                                  </ProtectedRoute>
-                                }
-                              />
-                              <Route path="*" element={<Navigate to="/" replace />} />
-                            </Routes>
-                          </Suspense>
-                        </Router>
-                      </ReactFlowProvider>
-                    </ErrorBoundary>
-                  </CombinedProvider>
-                </ModalProvider>
-              </GraphProvider>
-            </ProjectProvider>
-          </AuthProvider>
-        </AlertProvider>
-      </QueryClientProvider>
+      <AlertProvider>
+        <AuthProvider>
+          <ProjectProvider> {/* ProjectProvider enveloppe GraphProvider */}
+            <GraphProvider> {/* GraphProvider dépend de ProjectProvider */}
+              <CombinedProvider> {/* CombinedProvider dépend de GraphProvider */}
+                <ErrorBoundary>
+                  <ModalProvider>
+                    <ReactFlowProvider>
+                      <Router>
+                        <Header />
+                        <Routes>
+                          <Route path="/login" element={<LoginPage />} />
+                          <Route path="/register" element={<RegisterPage />} />
+                          <Route
+                            path="/"
+                            element={
+                              <ProtectedRoute>
+                                <MainApp />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route path="*" element={<Navigate to="/" replace />} />
+                        </Routes>
+                      </Router>
+                    </ReactFlowProvider>
+                  </ModalProvider>
+                </ErrorBoundary>
+              </CombinedProvider>
+            </GraphProvider>
+          </ProjectProvider>
+        </AuthProvider>
+      </AlertProvider>
     </ChakraProvider>
   );
 };
 
-export default React.memo(App);
+export default App;
 
 
 ---------
 /// my-low-code-app/frontend/src/axiosInstance.ts
 
+// frontend/src/axiosInstance.ts
+
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+  baseURL: 'http://localhost:3000', // Ajustez selon votre configuration
   headers: {
     'Content-Type': 'application/json',
-  }
+  },
 });
 
-// Add request interceptor to include auth token
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (token && config.headers) {
+      config.headers['Authorization'] = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-
-axiosInstance.interceptors.response.use(
-  (response) => {
-    // Si le serveur renvoie des données compressées, décompressez-les ici
-    if (response.headers['content-encoding'] === 'gzip') {
-      // Décompresser les données
-      // Note : Axios ne supporte pas directement la décompression, donc assurez-vous que le serveur renvoie des données décompressées ou utilisez une bibliothèque supplémentaire
-    }
-    return response;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 axiosInstance.interceptors.response.use(
@@ -126,55 +99,51 @@ export default axiosInstance;
 ---------
 /// my-low-code-app/frontend/src/components/CodeNode.tsx
 
+// frontend/src/components/CodeNode.tsx
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { Box, Button, Input, VStack, HStack, Text } from '@chakra-ui/react';
 import MonacoEditor from '@monaco-editor/react';
 import Select from 'react-select';
 import { useGraph } from '../contexts/GraphContext';
-import { CodeNodeData } from '../types';
+import axiosInstance from '../axiosInstance'; // Assurez-vous que ce chemin est correct
+import { useProject } from '../contexts/ProjectContext';
 import { useAlert } from '../contexts/AlertContext';
 import { ResizableBox } from 'react-resizable';
 import 'react-resizable/css/styles.css';
 
-interface SelectOption {
-  value: string;
-  label: string;
-}
-
-const CodeNodeComponent: React.FC<NodeProps<CodeNodeData>> = ({ id, data, xPos, yPos }) => {
+const CodeNode: React.FC<NodeProps> = ({ id, data }) => {
   const [code, setCode] = useState(data.code || '');
   const [fileName, setFileName] = useState(data.fileName || '');
   const [imports, setImports] = useState<string[]>(data.imports || []);
-  const [availableImports, setAvailableImports] = useState<SelectOption[]>([]);
+  const [availableImports, setAvailableImports] = useState<{ value: string; label: string }[]>([]);
   const [width, setWidth] = useState<number>(300);
   const [height, setHeight] = useState<number>(400);
-  
-  const { updateNode, deleteNode, cloneNode, selectedProject } = useGraph();
+  const { updateGraph, deleteNode, cloneNode, nodes, edges } = useGraph();
+  const { selectedProject } = useProject();
   const { showAlert } = useAlert();
 
   useEffect(() => {
-    if (selectedProject) {
-      axiosInstance
-        .get('/accessible-functions', {
-          params: { project: selectedProject, nodeId: id },
-        })
-        .then((response) => {
-          const options = response.data.accessibleFunctions.map((func: string) => ({
-            value: func,
-            label: func,
-          }));
-          setAvailableImports(options);
-        })
-        .catch((error) => {
-          console.error('Failed to fetch accessible functions:', error);
-          showAlert('Échec de la récupération des fonctions accessibles.', 'error');
-        });
-    }
+    axiosInstance
+      .get('/accessible-functions', {
+        params: { project: selectedProject, nodeId: id },
+      })
+      .then((response) => {
+        const options = response.data.accessibleFunctions.map((func: string) => ({
+          value: func,
+          label: func,
+        }));
+        setAvailableImports(options);
+      })
+      .catch((error) => {
+        console.error('Failed to fetch accessible functions:', error);
+        showAlert('Échec de la récupération des fonctions accessibles.', 'error');
+      });
   }, [id, selectedProject, showAlert]);
 
-  const handleImportChange = (selectedOptions: readonly SelectOption[]) => {
-    const selectedImports = selectedOptions ? selectedOptions.map(option => option.value) : [];
+  const handleImportChange = (selectedOptions: any) => {
+    const selectedImports = selectedOptions ? selectedOptions.map((option: any) => option.value) : [];
     setImports(selectedImports);
   };
 
@@ -184,33 +153,30 @@ const CodeNodeComponent: React.FC<NodeProps<CodeNodeData>> = ({ id, data, xPos, 
   };
 
   const handleSave = useCallback(async () => {
-    const updatedNode = {
-      id,
-      type: 'code' as const,
-      position: { x: xPos, y: yPos },
-      data: {
-        label: fileName,
-        fileName,
-        imports,
-        code,
-        exportedFunctions: data.exportedFunctions,
-        lintErrors: data.lintErrors,
-      },
-      width,
-      height,
-    };
+    const updatedNodes = nodes.map((node) =>
+      node.id === id
+        ? { ...node, data: { ...node.data, code, fileName, imports }, position: { ...node.position }, width, height }
+        : node
+    );
 
     try {
-      await updateNode(updatedNode);
+      await updateGraph(updatedNodes, edges);
       showAlert('Fichier sauvegardé avec succès.', 'success');
     } catch (error: any) {
       console.error('Failed to save file:', error);
-      showAlert(
-        `Échec de la sauvegarde du fichier: ${error?.response?.data?.message || 'Erreur inconnue'}`, 
-        'error'
-      );
+      if (error.response && error.response.data && error.response.data.message) {
+        showAlert(`Échec de la sauvegarde du fichier: ${error.response.data.message}`, 'error');
+      } else {
+        showAlert('Échec de la sauvegarde du fichier.', 'error');
+      }
     }
-  }, [id, code, fileName, imports, data.exportedFunctions, data.lintErrors, xPos, yPos, width, height, updateNode, showAlert]);
+  }, [id, code, fileName, imports, nodes, edges, updateGraph, showAlert, width, height]);
+
+  const handleExecute = useCallback(() => {
+    console.log(`Dispatching executeNode event for nodeId: ${id}`);
+    const event = new CustomEvent('executeNode', { detail: { nodeId: id } });
+    window.dispatchEvent(event);
+  }, [id]);
 
   const handleDelete = useCallback(() => {
     deleteNode(id);
@@ -221,13 +187,7 @@ const CodeNodeComponent: React.FC<NodeProps<CodeNodeData>> = ({ id, data, xPos, 
   }, [id, cloneNode]);
 
   return (
-    <ResizableBox 
-      width={width} 
-      height={height} 
-      onResize={handleResize}
-      minConstraints={[200, 200]} 
-      maxConstraints={[600, 600]}
-    >
+    <ResizableBox width={width} height={height} onResize={handleResize} minConstraints={[200, 200]} maxConstraints={[600, 600]}>
       <Box borderWidth={1} borderRadius="lg" p={3} bg="white" width="100%" height="100%">
         <VStack spacing={3}>
           <Input
@@ -235,8 +195,8 @@ const CodeNodeComponent: React.FC<NodeProps<CodeNodeData>> = ({ id, data, xPos, 
             onChange={(e) => setFileName(e.target.value)}
             placeholder="Nom du fichier"
           />
-          <Box width="100%">
-            <Text fontWeight="bold">Imports :</Text>
+          <Box>
+            <Text fontWeight="bold">Imports Internes :</Text>
             <Select
               isMulti
               options={availableImports}
@@ -245,7 +205,7 @@ const CodeNodeComponent: React.FC<NodeProps<CodeNodeData>> = ({ id, data, xPos, 
               placeholder="Sélectionner des imports"
             />
           </Box>
-          <Box height="150px" width="100%">
+          <Box height={150} width="100%">
             <MonacoEditor
               height="100%"
               language="javascript"
@@ -256,25 +216,18 @@ const CodeNodeComponent: React.FC<NodeProps<CodeNodeData>> = ({ id, data, xPos, 
             />
           </Box>
           {data.lintErrors && data.lintErrors.length > 0 && (
-            <Box width="100%">
+            <Box>
               <Text color="red.500" fontWeight="bold">Erreurs de lint :</Text>
-              {data.lintErrors.map((error, index) => (
-                <Text key={index} color="red.500">
-                  {`Ligne ${error.line}: ${error.message}`}
-                </Text>
+              {data.lintErrors.map((error: any, index: number) => (
+                <Text key={index} color="red.500">{`Ligne ${error.line}: ${error.message}`}</Text>
               ))}
             </Box>
           )}
           <HStack spacing={2}>
-            <Button size="sm" colorScheme="blue" onClick={handleSave}>
-              Sauvegarder
-            </Button>
-            <Button size="sm" colorScheme="red" onClick={handleDelete}>
-              Supprimer
-            </Button>
-            <Button size="sm" colorScheme="purple" onClick={handleClone}>
-              Cloner
-            </Button>
+            <Button size="sm" colorScheme="blue" onClick={handleSave}>Sauvegarder</Button>
+            <Button size="sm" colorScheme="green" onClick={handleExecute}>Exécuter</Button>
+            <Button size="sm" colorScheme="red" onClick={handleDelete}>Supprimer</Button>
+            <Button size="sm" colorScheme="purple" onClick={handleClone}>Cloner</Button>
           </HStack>
         </VStack>
         <Handle type="target" position={Position.Top} />
@@ -284,7 +237,8 @@ const CodeNodeComponent: React.FC<NodeProps<CodeNodeData>> = ({ id, data, xPos, 
   );
 };
 
-export default CodeNodeComponent;
+export default CodeNode;
+
 
 ---------
 /// my-low-code-app/frontend/src/components/Console.tsx
@@ -296,6 +250,7 @@ import { Box, Text, VStack, Button, Input, HStack } from '@chakra-ui/react';
 import { useCombined } from '../contexts/CombinedContext'; // Utiliser useCombined
 import axiosInstance from '../axiosInstance';
 import { useAlert } from '../contexts/AlertContext';
+import { useModal } from '../contexts/ModalContext'; // Utiliser useModalContext
 
 export const Console: React.FC = () => {
   const [output, setOutput] = useState('');
@@ -384,40 +339,46 @@ export const Console: React.FC = () => {
 
 // frontend/src/components/ErrorBoundary.tsx
 
-import React, { Component, ReactNode } from 'react';
-import { Box, Text } from '@chakra-ui/react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Box, Text, Button } from '@chakra-ui/react';
+import { useAlert } from '../contexts/AlertContext';
 
-interface ErrorBoundaryProps {
+interface Props {
   children: ReactNode;
 }
 
-interface ErrorBoundaryState {
+interface State {
   hasError: boolean;
   error: Error | null;
 }
 
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
+class ErrorBoundary extends Component<Props, State> {
+  public state: State = {
+    hasError: false,
+    error: null
+  };
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  public static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error', error, errorInfo);
-    // Vous pouvez également envoyer les erreurs à un service de reporting
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('Uncaught error:', error, errorInfo);
   }
 
-  render() {
+  public render() {
     if (this.state.hasError) {
-      console.log('Error:', this.state.error);
       return (
-        <Box p={5}>
-          <Text fontSize="xl" color="red.500">Quelque chose s'est mal passé.</Text>
-          <Text>{this.state.error?.message}</Text>
+        <Box p={4} bg="red.100" color="red.800" borderRadius="md">
+          <Text fontSize="xl" fontWeight="bold">Oops, there was an error!</Text>
+          <Text mt={2}>{this.state.error?.message}</Text>
+          <Button
+            mt={4}
+            colorScheme="red"
+            onClick={() => this.setState({ hasError: false, error: null })}
+          >
+            Try again
+          </Button>
         </Box>
       );
     }
@@ -460,7 +421,7 @@ const nodeTypes = {
     code: CodeNode,
 };
 
-const UPDATE_DELAY = 30000; // Délai en millisecondes avant la mise à jour
+const UPDATE_DELAY = 1000; // Délai en millisecondes avant la mise à jour
 
 export const GraphCanvas: React.FC = () => {
     const {
@@ -502,9 +463,11 @@ export const GraphCanvas: React.FC = () => {
     }, [selectedProject, loadGraph, showAlert]);
 
     useEffect(() => {
-        console.log("ix")
-        refreshGraph();
-    }, [refreshGraph, selectedProject]);
+        if (selectedProject) {
+            console.log("Rafraîchissement du graphe pour le projet:", selectedProject);
+            refreshGraph();
+        }
+    }, [selectedProject]);
 
     const scheduleUpdate = useCallback((updatedNodes: Node[], updatedEdges: Edge[]) => {
         if (updateTimerRef.current) {
@@ -943,15 +906,12 @@ export const MainApp: React.FC = () => {
   );
 };
 
-export default MainApp;
-
-
 ---------
 /// my-low-code-app/frontend/src/components/Modals.tsx
 
 // frontend/src/components/Modals.tsx
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -962,46 +922,70 @@ import {
   ModalCloseButton,
   Button,
   Text,
+  useDisclosure,
 } from '@chakra-ui/react';
-import { useModal } from '../contexts/ModalContext';
 import { useGraph } from '../contexts/GraphContext';
 
 export const Modals: React.FC = () => {
-  const { isDeleteModalOpen, closeDeleteModal, nodeToDelete } = useModal();
+  const { isOpen: isDeleteModalOpen, onOpen: onDeleteModalOpen, onClose: onDeleteModalClose } = useDisclosure();
   const { deleteNode } = useGraph();
+  const [nodeToDelete, setNodeToDelete] = React.useState<string | null>(null);
 
-  const handleConfirmDelete = useCallback(() => {
+  // This function would be called from a parent component or through an event system
+  const openDeleteModal = (nodeId: string) => {
+    setNodeToDelete(nodeId);
+    onDeleteModalOpen();
+  };
+
+  const handleConfirmDelete = () => {
     if (nodeToDelete) {
       deleteNode(nodeToDelete);
-      closeDeleteModal();
+      onDeleteModalClose();
+      setNodeToDelete(null);
     }
-  }, [nodeToDelete, deleteNode, closeDeleteModal]);
+  };
 
   return (
     <>
       {/* Delete Node Modal */}
-      <Modal isOpen={isDeleteModalOpen} onClose={closeDeleteModal}>
+      <Modal isOpen={isDeleteModalOpen} onClose={onDeleteModalClose}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Confirmer la Suppression</ModalHeader>
+          <ModalHeader>Confirm Deletion</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <Text>Êtes-vous sûr de vouloir supprimer ce nœud ? Cette action est irréversible.</Text>
+            <Text>Are you sure you want to delete this node? This action cannot be undone.</Text>
           </ModalBody>
           <ModalFooter>
             <Button colorScheme="red" mr={3} onClick={handleConfirmDelete}>
-              Supprimer
+              Delete
             </Button>
-            <Button variant="ghost" onClick={closeDeleteModal}>Annuler</Button>
+            <Button variant="ghost" onClick={onDeleteModalClose}>Cancel</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
 
-      {/* Ajoutez d'autres modals ici si nécessaire */}
+      {/* You can add more modals here as needed */}
+      {/* For example: Edit Node Modal, Create Connection Modal, etc. */}
     </>
   );
 };
 
+// This function should be exported and used in parent components to open the delete modal
+export const useModals = () => {
+  const { isOpen: isDeleteModalOpen, onOpen: onDeleteModalOpen, onClose: onDeleteModalClose } = useDisclosure();
+
+  const openDeleteModal = (nodeId: string) => {
+    // Logic to set the node to delete and open the modal
+    onDeleteModalOpen();
+  };
+
+  return {
+    openDeleteModal,
+    isDeleteModalOpen,
+    onDeleteModalClose,
+  };
+};
 
 ---------
 /// my-low-code-app/frontend/src/components/ProjectControls.tsx
@@ -1069,6 +1053,8 @@ export const ProjectControls: React.FC = () => {
 ---------
 /// my-low-code-app/frontend/src/components/ProjectStructure.tsx
 
+// frontend/src/components/ProjectStructure.tsx
+
 import React from 'react';
 import { Box, Text, VStack, HStack, Icon } from '@chakra-ui/react';
 import { FaFolder, FaFile } from 'react-icons/fa';
@@ -1097,19 +1083,13 @@ const FileTreeItem: React.FC<{ node: FileTreeNode; depth: number }> = ({ node, d
 export const ProjectStructure: React.FC = () => {
   const { nodes } = useGraph();
 
-  // Log pour vérifier la structure des nodes
-  console.log("nodes:", nodes);
-
-  // Filtrer et formater les nodes
   const fileTree: FileTreeNode = {
     name: 'Project Root',
     type: 'folder',
-    children: nodes
-      .filter(node => node?.data?.fileName)  // Filtrer les nodes valides
-      .map(node => ({
-        name: node.data.fileName || 'Unnamed File',  // Assurer une valeur par défaut
-        type: 'file'
-      }))
+    children: nodes.map(node => ({
+      name: node.data.fileName,
+      type: 'file'
+    }))
   };
 
   return (
@@ -1119,9 +1099,6 @@ export const ProjectStructure: React.FC = () => {
     </Box>
   );
 };
-
-export default ProjectStructure;
-
 
 ---------
 /// my-low-code-app/frontend/src/components/ProtectedRoute.tsx
@@ -1455,25 +1432,6 @@ export const Sidebar: React.FC = () => {
 
 
 ---------
-/// my-low-code-app/frontend/src/components/SomeComponent.tsx
-
-import React from 'react';
-
-const SomeComponent: React.FC = () => {
-  const someObject = { key: 'value' };
-  return (
-    <div>
-      {someObject.key} {/* Affiche 'value' */}
-      {/* Ou utilisez JSON.stringify si nécessaire */}
-      <pre>{JSON.stringify(someObject, null, 2)}</pre>
-    </div>
-  );
-};
-
-export default SomeComponent;
-
-
----------
 /// my-low-code-app/frontend/src/contexts/AlertContext.tsx
 
 // frontend/src/contexts/AlertContext.tsx
@@ -1494,7 +1452,7 @@ export const AlertProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     toast({
       title: message,
       status: status,
-      duration: 500,
+      duration: 3000,
       isClosable: true,
     });
   };
@@ -1517,71 +1475,73 @@ export const useAlert = () => {
 ---------
 /// my-low-code-app/frontend/src/contexts/AuthContext.tsx
 
-// frontend/src/contexts/AuthContext.tsx
-
-import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import axiosInstance from '../axiosInstance';
 import { useAlert } from './AlertContext';
 
 interface AuthContextType {
   isAuthenticated: boolean;
+  token: string | null;
   login: (username: string, password: string) => Promise<void>;
+  register: (username: string, password: string) => Promise<void>;
   logout: () => void;
-  // Ajoutez d'autres propriétés si nécessaire
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
   const { showAlert } = useAlert();
 
-  const login = useCallback(async (username: string, password: string) => {
+  useEffect(() => {
+    if (token) {
+      localStorage.setItem('token', token);
+    } else {
+      localStorage.removeItem('token');
+    }
+  }, [token]);
+
+  const login = async (username: string, password: string) => {
     try {
       const response = await axiosInstance.post('/auth/login', { username, password });
-      // Supposons que le token est stocké dans localStorage
-      localStorage.setItem('token', response.data.token);
-      setIsAuthenticated(true);
+      setToken(response.data.token);
       showAlert('Connexion réussie.', 'success');
     } catch (error: any) {
-      console.error('Failed to login:', error);
-      showAlert(error.response?.data?.message || 'Échec de la connexion.', 'error');
+      const message = error.response?.data?.message || 'Échec de la connexion.';
+      showAlert(message, 'error');
       throw error;
     }
-  }, [showAlert]);
-
-  const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    setIsAuthenticated(false);
-    showAlert('Déconnexion réussie.', 'info');
-  }, [showAlert]);
-
-  useEffect(() => {
-    // Vérifiez si le token est présent lors du chargement initial
-    const token = localStorage.getItem('token');
-    if (token) {
-      setIsAuthenticated(true);
-    }
-  }, []);
-
-  const contextValue: AuthContextType = {
-    isAuthenticated,
-    login,
-    logout,
-    // Ajoutez d'autres fonctions ou propriétés si nécessaire
   };
 
+  const register = async (username: string, password: string) => {
+    try {
+      await axiosInstance.post('/auth/register', { username, password });
+      showAlert('Inscription réussie. Vous pouvez maintenant vous connecter.', 'success');
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Échec de l\'inscription.';
+      showAlert(message, 'error');
+      throw error;
+    }
+  };
+
+  const logout = () => {
+    setToken(null);
+    showAlert('Déconnexion réussie.', 'info');
+  };
+
+  const isAuthenticated = Boolean(token);
+
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext.Provider value={{ isAuthenticated, token, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  if (context === undefined) {
+    throw new Error('useAuth doit être utilisé dans un AuthProvider');
   }
   return context;
 };
@@ -1592,12 +1552,12 @@ export const useAuth = () => {
 
 // frontend/src/contexts/CombinedContext.tsx
 
-import React, { createContext, useContext, ReactNode, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { Node, Edge } from 'reactflow';
+import axiosInstance from '../axiosInstance';
 import { useAlert } from './AlertContext';
 import { useGraph } from './GraphContext';
 import { useProject } from './ProjectContext';
-import { useModal } from './ModalContext';
 
 interface Project {
   _id: string;
@@ -1617,60 +1577,34 @@ interface CombinedContextType {
   importGitProject: (repoUrl: string) => Promise<void>;
   deleteProject: (projectName: string) => Promise<void>;
   loadGraph: () => Promise<void>;
-  updateGraph: (updatedNode: Node) => Promise<void>;
+  updateGraph: (updatedNodes: Node[], updatedEdges: Edge[]) => Promise<void>;
   addNode: (newNode: Node) => void;
   deleteNode: (nodeId: string) => Promise<void>;
   cloneNode: (nodeId: string) => Promise<void>;
   executeNode: (nodeId: string) => Promise<{ stdout: string; stderr: string }>;
-  // Gestion des Modals
-  isDeleteModalOpen: boolean;
-  openDeleteModal: (nodeId: string) => void;
-  closeDeleteModal: () => void;
-  nodeToDelete: string | null;
 }
 
 const CombinedContext = createContext<CombinedContextType | undefined>(undefined);
 
 export const CombinedProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const {
-    projects,
-    selectedProject,
-    selectProject,
-    loadProjects,
-    createProject,
-    installPackage,
-    importGitProject,
-    deleteProject,
-  } = useProject();
-
-  const {
-    nodes,
-    edges,
-    loadGraph,
-    updateGraph,
-    addNode,
-    deleteNode,
-    cloneNode,
-    executeNode,
-  } = useGraph();
-
+  const { projects, selectedProject, selectProject, loadProjects, createProject, installPackage, importGitProject, deleteProject } = useProject();
+  const { nodes, edges, loadGraph, updateGraph, addNode, deleteNode, cloneNode, executeNode } = useGraph();
   const { showAlert } = useAlert();
-  const { isDeleteModalOpen, openDeleteModal, closeDeleteModal, nodeToDelete } = useModal();
 
   // Charger le graphe lorsque le projet sélectionné change
   useEffect(() => {
     if (selectedProject) {
-      loadGraph();
+      loadGraph(selectedProject);
     }
   }, [selectedProject, loadGraph]);
 
-  const handleUpdateGraph = useCallback(async (updatedNode: Node) => {
+  const handleUpdateGraph = async (updatedNodes: Node[], updatedEdges: Edge[]) => {
     try {
-      await updateGraph(updatedNode);
+      await updateGraph(selectedProject, updatedNodes, updatedEdges);
     } catch (error) {
       // L'erreur est déjà gérée dans GraphProvider
     }
-  }, [updateGraph]);
+  };
 
   const contextValue: CombinedContextType = {
     projects,
@@ -1683,17 +1617,12 @@ export const CombinedProvider: React.FC<{ children: ReactNode }> = ({ children }
     installPackage,
     importGitProject,
     deleteProject,
-    loadGraph,
+    loadGraph: () => loadGraph(selectedProject),
     updateGraph: handleUpdateGraph,
     addNode,
     deleteNode,
     cloneNode,
-    executeNode,
-    // Gestion des Modals
-    isDeleteModalOpen,
-    openDeleteModal,
-    closeDeleteModal,
-    nodeToDelete,
+    executeNode
   };
 
   return (
@@ -1715,49 +1644,38 @@ export const useCombined = () => {
 ---------
 /// my-low-code-app/frontend/src/contexts/GraphContext.tsx
 
+// frontend/src/contexts/GraphContext.tsx
+
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
-import type { Edge } from 'reactflow';
+import { Node, Edge } from 'reactflow';
 import axiosInstance from '../axiosInstance';
 import { useAlert } from './AlertContext';
-import { 
-  AppNode, 
-  GraphResponse, 
-  UpdateNodeResponse, 
-  ExecuteNodeResponse,
-  CloneNodeResponse,
-  CodeNodeData 
-} from '../types';
 
 interface GraphContextType {
-  nodes: AppNode[];
+  nodes: Node[];
   edges: Edge[];
-  selectedProject: string | null;
-  setSelectedProject: (project: string) => void;
   loadGraph: (project: string) => Promise<void>;
-  updateGraph: (updatedNodes: AppNode[], updatedEdges: Edge[]) => Promise<void>;
-  updateNode: (node: AppNode) => Promise<void>;
-  addNode: (newNode: AppNode) => void;
+  updateGraph: (project: string, updatedNodes: Node[], updatedEdges: Edge[]) => Promise<void>;
+  addNode: (newNode: Node) => void;
   deleteNode: (nodeId: string) => Promise<void>;
   cloneNode: (nodeId: string) => Promise<void>;
-  executeNode: (nodeId: string) => Promise<ExecuteNodeResponse>;
+  executeNode: (nodeId: string) => Promise<{ stdout: string; stderr: string }>;
 }
 
 const GraphContext = createContext<GraphContextType | undefined>(undefined);
 
 export const GraphProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [nodes, setNodes] = useState<AppNode[]>([]);
+  const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
-  const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const { showAlert } = useAlert();
 
   const loadGraph = useCallback(async (project: string) => {
     try {
-      const response = await axiosInstance.get<GraphResponse>('/project-graph', {
+      const response = await axiosInstance.get('/project-graph', {
         params: { project },
       });
       setNodes(response.data.graph.nodes);
       setEdges(response.data.graph.edges);
-      setSelectedProject(project);
       showAlert('Graphe chargé avec succès.', 'success');
     } catch (error) {
       console.error('Échec du chargement du graphe du projet:', error);
@@ -1765,19 +1683,14 @@ export const GraphProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   }, [showAlert]);
 
-  const updateGraph = async (updatedNodes: AppNode[], updatedEdges: Edge[]) => {
-    if (!selectedProject) {
-      showAlert('Aucun projet sélectionné.', 'error');
-      throw new Error('No project selected');
-    }
-
+  const updateGraph = async (project: string, updatedNodes: Node[], updatedEdges: Edge[]) => {
     try {
-      await axiosInstance.post<UpdateNodeResponse>('/project-graph/update-graph', {
-        project: selectedProject,
+      const response = await axiosInstance.post('/project-graph/update-graph', {
+        project,
         nodes: updatedNodes,
         edges: updatedEdges
       });
-      
+      console.log('Réponse de mise à jour du graphe:', response.data);
       setNodes(updatedNodes);
       setEdges(updatedEdges);
       showAlert('Graphe mis à jour avec succès.', 'success');
@@ -1788,61 +1701,19 @@ export const GraphProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   };
 
-  const updateNode = async (node: AppNode) => {
-    if (!selectedProject) {
-      showAlert('Aucun projet sélectionné.', 'error');
-      throw new Error('No project selected');
-    }
-
-    try {
-      await axiosInstance.post<UpdateNodeResponse>('/project-graph/update-node', {
-        project: selectedProject,
-        node: {
-          ...node,
-          data: node.type === 'code' 
-            ? {
-                ...node.data,
-                fileName: (node.data as CodeNodeData).fileName,
-                code: (node.data as CodeNodeData).code,
-                imports: (node.data as CodeNodeData).imports,
-                exportedFunctions: (node.data as CodeNodeData).exportedFunctions,
-              }
-            : { label: node.data.label }
-        }
-      });
-
-      setNodes(prevNodes => 
-        prevNodes.map(n => n.id === node.id ? node : n)
-      );
-      
-      showAlert('Nœud mis à jour avec succès.', 'success');
-    } catch (error) {
-      console.error('Échec de la mise à jour du nœud:', error);
-      showAlert('Échec de la mise à jour du nœud.', 'error');
-      throw error;
-    }
+  const addNode = (newNode: Node) => {
+    setNodes(prevNodes => [...prevNodes, newNode]);
   };
 
-  const addNode = useCallback((newNode: AppNode) => {
-    setNodes(prevNodes => [...prevNodes, newNode]);
-  }, []);
-
   const deleteNode = async (nodeId: string) => {
-    if (!selectedProject) {
-      showAlert('Aucun projet sélectionné.', 'error');
-      throw new Error('No project selected');
-    }
-
     try {
-      await axiosInstance.post<UpdateNodeResponse>('/project-graph/delete-node', {
-        project: selectedProject,
+      const response = await axiosInstance.post('/project-graph/delete-node', {
+        project: '', // Le projet sera passé lors de l'appel
         nodeId
       });
-      
+      console.log('Réponse de suppression du nœud:', response.data);
       setNodes(prevNodes => prevNodes.filter(node => node.id !== nodeId));
-      setEdges(prevEdges => prevEdges.filter(edge => 
-        edge.source !== nodeId && edge.target !== nodeId
-      ));
+      setEdges(prevEdges => prevEdges.filter(edge => edge.source !== nodeId && edge.target !== nodeId));
       showAlert('Nœud supprimé avec succès.', 'success');
     } catch (error) {
       console.error('Échec de la suppression du nœud:', error);
@@ -1852,19 +1723,14 @@ export const GraphProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const cloneNode = async (nodeId: string) => {
-    if (!selectedProject) {
-      showAlert('Aucun projet sélectionné.', 'error');
-      throw new Error('No project selected');
-    }
-
     try {
       const newNodeId = `${nodeId}_clone`;
-      const response = await axiosInstance.post<CloneNodeResponse>('/project-graph/clone-node', {
-        project: selectedProject,
+      const response = await axiosInstance.post('/project-graph/clone-node', {
+        project: '', // Le projet sera passé lors de l'appel
         nodeId,
         newNodeId
       });
-      
+      console.log('Réponse de clonage du nœud:', response.data);
       setNodes(prevNodes => [...prevNodes, response.data.clonedNode]);
       showAlert('Nœud cloné avec succès.', 'success');
     } catch (error) {
@@ -1874,20 +1740,15 @@ export const GraphProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   };
 
-  const executeNode = async (nodeId: string): Promise<ExecuteNodeResponse> => {
-    if (!selectedProject) {
-      showAlert('Aucun projet sélectionné.', 'error');
-      throw new Error('No project selected');
-    }
-
+  const executeNode = async (nodeId: string): Promise<{ stdout: string; stderr: string }> => {
     try {
-      const response = await axiosInstance.post<ExecuteNodeResponse>('/execute', {
-        project: selectedProject,
+      const response = await axiosInstance.post('/execute', {
+        project: '', // Le projet sera passé lors de l'appel
         nodeId
       });
-      
+      console.log('Réponse d\'exécution du nœud:', response.data);
       showAlert('Nœud exécuté avec succès.', 'success');
-      return response.data;
+      return { stdout: response.data.stdout, stderr: response.data.stderr };
     } catch (error) {
       console.error('Échec de l\'exécution du nœud:', error);
       showAlert('Échec de l\'exécution du nœud.', 'error');
@@ -1896,19 +1757,7 @@ export const GraphProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   return (
-    <GraphContext.Provider value={{ 
-      nodes, 
-      edges, 
-      selectedProject, 
-      setSelectedProject,
-      loadGraph, 
-      updateGraph, 
-      updateNode,
-      addNode, 
-      deleteNode, 
-      cloneNode, 
-      executeNode 
-    }}>
+    <GraphContext.Provider value={{ nodes, edges, loadGraph, updateGraph, addNode, deleteNode, cloneNode, executeNode }}>
       {children}
     </GraphContext.Provider>
   );
@@ -1923,57 +1772,247 @@ export const useGraph = () => {
 };
 
 
-
 ---------
 /// my-low-code-app/frontend/src/contexts/ModalContext.tsx
 
 // frontend/src/contexts/ModalContext.tsx
 
-import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
+import React, { createContext, useState, useContext, ReactNode } from 'react';
+import {
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  Button,
+  VStack,
+  Text,
+  HStack,
+} from '@chakra-ui/react';
+import { useCombined } from './CombinedContext';
+import { useAlert } from './AlertContext';
 
 interface ModalContextType {
-  isDeleteModalOpen: boolean;
-  openDeleteModal: (nodeId: string) => void;
-  closeDeleteModal: () => void;
-  nodeToDelete: string | null;
+  isOpen: boolean;
+  openModal: (content: string, data?: any) => void;
+  closeModal: () => void;
+  modalContent: string | null;
+  modalData: any;
 }
 
 const ModalContext = createContext<ModalContextType | undefined>(undefined);
 
 export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [nodeToDelete, setNodeToDelete] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [modalContent, setModalContent] = useState<string | null>(null);
+  const [modalData, setModalData] = useState<any>(null);
+  const { deleteNode } = useCombined();
+  const { showAlert } = useAlert();
 
-  const openDeleteModal = useCallback((nodeId: string) => {
-    setNodeToDelete(nodeId);
-    setIsDeleteModalOpen(true);
-  }, []);
+  const openModal = (content: string, data: any = null) => {
+    setModalContent(content);
+    setModalData(data);
+    setIsOpen(true);
+    console.log(`Modal ouvert: ${content}`, data); // Debug
+  };
 
-  const closeDeleteModal = useCallback(() => {
-    setIsDeleteModalOpen(false);
-    setNodeToDelete(null);
-  }, []);
+  const closeModal = () => {
+    setIsOpen(false);
+    setModalContent(null);
+    setModalData(null);
+    console.log('Modal fermé'); // Debug
+  };
 
-  const contextValue: ModalContextType = {
-    isDeleteModalOpen,
-    openDeleteModal,
-    closeDeleteModal,
-    nodeToDelete,
+  const handleDelete = async () => {
+    if (modalData && modalData.nodeId) {
+      try {
+        await deleteNode(modalData.nodeId);
+        showAlert('Nœud supprimé avec succès.', 'success');
+        closeModal();
+      } catch (error: any) {
+        showAlert('Échec de la suppression du nœud.', 'error');
+      }
+    }
+  };
+
+  const renderModalContent = () => {
+    switch (modalContent) {
+      case 'login':
+        return <LoginForm />;
+      case 'register':
+        return <RegisterForm />;
+      case 'delete':
+        return <DeleteNodeForm />;
+      // Ajoutez d'autres cas pour différents types de modaux
+      default:
+        return null;
+    }
   };
 
   return (
-    <ModalContext.Provider value={contextValue}>
+    <ModalContext.Provider value={{ isOpen, openModal, closeModal, modalContent, modalData }}>
       {children}
+      {isOpen && (
+        <Modal isOpen={isOpen} onClose={closeModal} isCentered>
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>
+              {modalContent === 'login'
+                ? 'Connexion'
+                : modalContent === 'register'
+                ? 'Inscription'
+                : 'Confirmation'}
+            </ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>{renderModalContent()}</ModalBody>
+            <ModalFooter>
+              {modalContent !== 'delete' && (
+                <Button colorScheme="blue" mr={3} onClick={closeModal}>
+                  Fermer
+                </Button>
+              )}
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      )}
     </ModalContext.Provider>
   );
 };
 
+// Hook personnalisé pour utiliser le contexte des modaux
 export const useModal = () => {
   const context = useContext(ModalContext);
   if (!context) {
     throw new Error('useModal must be used within a ModalProvider');
   }
   return context;
+};
+
+// Composant pour le formulaire de connexion
+const LoginForm: React.FC = () => {
+  const { closeModal } = useModal();
+  const { login } = useCombined();
+  const { showAlert } = useAlert();
+
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleLogin = async () => {
+    if (!username || !password) {
+      showAlert('Nom d\'utilisateur et mot de passe requis.', 'warning');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await login(username, password);
+      closeModal();
+    } catch (error) {
+      // Les erreurs sont gérées dans le contexte Auth
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <VStack spacing={4}>
+      <Input
+        placeholder="Nom d'utilisateur"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+      />
+      <Input
+        type="password"
+        placeholder="Mot de passe"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      <Button colorScheme="blue" onClick={handleLogin} isLoading={isSubmitting}>
+        Connexion
+      </Button>
+    </VStack>
+  );
+};
+
+// Composant pour le formulaire d'inscription
+const RegisterForm: React.FC = () => {
+  const { closeModal } = useModal();
+  const { register } = useCombined();
+  const { showAlert } = useAlert();
+
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleRegister = async () => {
+    if (!username || !password) {
+      showAlert('Nom d\'utilisateur et mot de passe requis.', 'warning');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await register(username, password);
+      closeModal();
+    } catch (error) {
+      // Les erreurs sont gérées dans le contexte Auth
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <VStack spacing={4}>
+      <Input
+        placeholder="Nom d'utilisateur"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+      />
+      <Input
+        type="password"
+        placeholder="Mot de passe"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      <Button colorScheme="green" onClick={handleRegister} isLoading={isSubmitting}>
+        Inscription
+      </Button>
+    </VStack>
+  );
+};
+
+// Composant pour la confirmation de suppression de nœud
+const DeleteNodeForm: React.FC = () => {
+  const { closeModal, modalData } = useModal();
+  const { deleteNode } = useCombined();
+  const { showAlert } = useAlert();
+
+  const handleDelete = async () => {
+    if (modalData && modalData.nodeId) {
+      try {
+        await deleteNode(modalData.nodeId);
+        showAlert('Nœud supprimé avec succès.', 'success');
+        closeModal();
+      } catch (error: any) {
+        showAlert('Échec de la suppression du nœud.', 'error');
+      }
+    }
+  };
+
+  return (
+    <VStack spacing={4}>
+      <Text>Êtes-vous sûr de vouloir supprimer ce nœud ? Cette action est irréversible.</Text>
+      <HStack spacing={4}>
+        <Button colorScheme="red" onClick={handleDelete}>
+          Supprimer
+        </Button>
+        <Button variant="ghost" onClick={closeModal}>
+          Annuler
+        </Button>
+      </HStack>
+    </VStack>
+  );
 };
 
 
@@ -2246,41 +2285,11 @@ export const nodeTypes = {
 ---------
 /// my-low-code-app/frontend/src/nodes/types.ts
 
-// types.ts
-import type { Node, Edge } from 'reactflow';
+import type { Node } from 'reactflow';
 
-export interface CodeNodeData {
-  label: string;
-  fileName: string;
-  imports: string[];
-  code: string;
-  exportedFunctions: string[];
-  lintErrors?: Array<{
-    line: number;
-    message: string;
-  }>;
-}
-
-export interface PositionLoggerNodeData {
-  label: string;
-}
-
-export type CodeNode = Node<CodeNodeData, 'code'>;
-export type PositionLoggerNode = Node<PositionLoggerNodeData, 'position-logger'>;
-export type AppNode = CodeNode | PositionLoggerNode;
-
-// Interface pour les réponses API
-export interface GraphResponse {
-  graph: {
-    nodes: AppNode[];
-    edges: Edge[];
-  }
-}
-
-export interface UpdateNodeResponse {
-  message: string;
-}
-
+export type PositionLoggerNode = Node<{ label: string }, 'position-logger'>;
+export type AppNode = PositionLoggerNode;
+// Ajoutez d'autres types de nœuds ici si nécessaire
 
 ---------
 /// my-low-code-app/frontend/src/pages/LoginPage.tsx
@@ -2338,8 +2347,6 @@ export const LoginPage: React.FC = () => {
     </Box>
   );
 };
-
-export default LoginPage
 
 ---------
 /// my-low-code-app/frontend/src/pages/RegisterPage.tsx
