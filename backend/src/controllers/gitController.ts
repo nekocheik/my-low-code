@@ -209,7 +209,7 @@ async function analyzeProjectFiles(projectPath: string, projectId: string): Prom
         
         const node: ProjectNode = {
           project: projectId,
-          id: relativeFilePath,
+          id: crypto.randomUUID(),
           type: 'code',
           position: { x: Math.random() * 800, y: Math.random() * 600 },
           data: {

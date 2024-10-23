@@ -10,6 +10,7 @@ import fileRoutes from './routes/fileRoutes';
 import executeRoutes from './routes/executeRoutes';
 import devServerRoutes from './routes/devServerRoutes';
 import gitRoutes from './routes/gitRoutes'; // Si vous avez des routes Git
+import authRoutes from './routes/authRoutes'; // Si vous avez des routes Git
 
 import { errorHandler } from './middleware/errorHandler'; // Middleware de gestion des erreurs
 import logger from './utils/logger'; // Importer le logger
@@ -34,6 +35,7 @@ app.use('/update-file', fileRoutes);
 app.use('/execute', executeRoutes);
 app.use('/dev-server', devServerRoutes);
 app.use('/git', gitRoutes); // Si vous avez des routes Git
+app.use('/auth', authRoutes); // Si vous avez des routes d'authentification
 
 // Configuration Swagger
 const options = {
